@@ -100,7 +100,7 @@ Item {
       + Style.spacing.hairline
     focus: true
     closePolicy: Controls.Popup.CloseOnEscape
-      | Controls.Popup.CloseOnPressOutside
+      | Controls.Popup.CloseOnPressOutsideParent
     onOpened: customButton.forceActiveFocus()
 
     background: BorderSurface {
