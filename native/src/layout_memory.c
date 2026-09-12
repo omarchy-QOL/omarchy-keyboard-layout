@@ -26,8 +26,8 @@ static int remember_layout(struct layout_memory *memory, uint64_t window,
     size_t next_capacity = memory->capacity == 0 ? 16 : memory->capacity * 2;
     if (next_capacity > SIZE_MAX / sizeof(*memory->windows))
       return -1;
-    void *next = realloc(memory->windows,
-                         next_capacity * sizeof(*memory->windows));
+    void *next =
+        realloc(memory->windows, next_capacity * sizeof(*memory->windows));
     if (next == NULL)
       return -1;
     memory->windows = next;
@@ -79,8 +79,8 @@ int layout_memory_focus(struct layout_memory *memory, uint64_t window,
     return 0;
 
   if (memory->focused_window != 0 && memory->active_layout >= 0 &&
-      remember_layout(memory, memory->focused_window,
-                      memory->active_layout) != 0)
+      remember_layout(memory, memory->focused_window, memory->active_layout) !=
+          0)
     return -1;
 
   memory->focused_window = window;

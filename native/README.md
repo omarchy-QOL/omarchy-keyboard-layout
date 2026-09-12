@@ -24,10 +24,13 @@ make test
 make check-live
 ```
 
+Generate clangd's local compilation database with `make compile-commands`. This
+requires Bear; the generated file remains untracked.
+
 `check-live` only reads the active Hyprland window and keyboard state. It does
 not start the daemon or switch layouts.
 
-The committed executable targets x86-64 and dynamically links to `json-c`,
-which is included with a standard Omarchy installation.
+The committed executable targets x86-64 and dynamically links to `json-c`, which
+is included with a standard Omarchy installation.
 
 The original MIT notice is preserved in [LICENSE](LICENSE).

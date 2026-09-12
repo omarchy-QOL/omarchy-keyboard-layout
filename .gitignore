@@ -1,4 +1,5 @@
 .settings.json
 /TODO/
 /native/build/
+/native/compile_commands.json
 /native/keyboard-layoutd

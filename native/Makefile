@@ -13,7 +13,7 @@ SOURCES := src/main.c $(LIB_SOURCES)
 OBJECTS := $(SOURCES:src/%.c=$(BUILD_DIR)/%.o)
 TESTS := $(BUILD_DIR)/test_hypr_ipc $(BUILD_DIR)/test_layout_memory
 
-.PHONY: all check-live clean test
+.PHONY: all check-live clean compile-commands test
 
 all: $(TARGET)
 
@@ -37,6 +37,14 @@ test: $(TESTS)
 
 check-live: $(BUILD_DIR)/test_live_ipc
 	@$<
+
+compile-commands:
+	@command -v bear >/dev/null || { \
+		echo "bear is required to generate compile_commands.json" >&2; \
+		exit 1; \
+	}
+	bear --output compile_commands.json -- \
+		$(MAKE) clean $(TARGET) $(TESTS) $(BUILD_DIR)/test_live_ipc
 
 $(BUILD_DIR)/test_live_ipc: tests/test_live_ipc.c $(BUILD_DIR)/hypr_ipc.o \
 		$(BUILD_DIR)/layout_memory.o

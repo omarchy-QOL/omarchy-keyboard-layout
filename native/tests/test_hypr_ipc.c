@@ -16,8 +16,7 @@ static const char *devices =
 
 static void test_active_window(void) {
   uint64_t window = 0;
-  assert(hypr_json_active_window("{\"address\":\"0x1a2b\"}", &window) ==
-         0);
+  assert(hypr_json_active_window("{\"address\":\"0x1a2b\"}", &window) == 0);
   assert(window == 0x1a2b);
   assert(hypr_json_active_window("{}", &window) == -1);
   assert(hypr_json_active_window("{\"address\":17}", &window) == -1);
@@ -38,9 +37,8 @@ static void test_current_layout_prefers_main_typing_keyboard(void) {
   assert(hypr_json_current_layout(devices, &layout) == 0);
   assert(layout == 3);
 
-  const char *fallback =
-      "{\"keyboards\":[{\"name\":\"video-bus\","
-      "\"active_layout_index\":2,\"main\":false}]}";
+  const char *fallback = "{\"keyboards\":[{\"name\":\"video-bus\","
+                         "\"active_layout_index\":2,\"main\":false}]}";
   assert(hypr_json_current_layout(fallback, &layout) == 0);
   assert(layout == 2);
   assert(hypr_json_current_layout("{\"keyboards\":[]}", &layout) == -1);
@@ -60,10 +58,9 @@ static void test_invalid_json(void) {
   int layout = -1;
   assert(hypr_json_current_layout("not json", &layout) == -1);
   assert(hypr_json_current_layout("{\"keyboards\":{}}", &layout) == -1);
-  assert(hypr_json_device_layout(
-             "{\"keyboards\":[{\"name\":\"keyboard\","
-             "\"active_layout_index\":\"1\"}]}",
-             "keyboard", &layout) == -1);
+  assert(hypr_json_device_layout("{\"keyboards\":[{\"name\":\"keyboard\","
+                                 "\"active_layout_index\":\"1\"}]}",
+                                 "keyboard", &layout) == -1);
 
   const char *wrong_main_type =
       "{\"keyboards\":["

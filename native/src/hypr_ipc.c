@@ -34,7 +34,7 @@ int hypr_ipc_init(struct hypr_ipc *ipc, const char *runtime_dir,
 static int connect_to(const struct sockaddr_un *address) {
   int fd = socket(AF_UNIX, SOCK_STREAM, 0);
   socklen_t length = (socklen_t)(offsetof(struct sockaddr_un, sun_path) +
-                                strlen(address->sun_path) + 1);
+                                 strlen(address->sun_path) + 1);
   if (fd < 0)
     return -1;
   if (connect(fd, (const struct sockaddr *)address, length) == 0)
@@ -101,8 +101,7 @@ static int keyboard_layout(json_object *keyboard, int *layout) {
 
 static const char *keyboard_name(json_object *keyboard) {
   json_object *value = NULL;
-  if (keyboard == NULL ||
-      !json_object_is_type(keyboard, json_type_object) ||
+  if (keyboard == NULL || !json_object_is_type(keyboard, json_type_object) ||
       !json_object_object_get_ex(keyboard, "name", &value) ||
       !json_object_is_type(value, json_type_string))
     return NULL;
@@ -226,8 +225,8 @@ int hypr_ipc_device_layout(const struct hypr_ipc *ipc, const char *device,
 
 int hypr_ipc_switch_layout(const struct hypr_ipc *ipc, int layout) {
   char request[64];
-  int length = snprintf(request, sizeof(request),
-                        "/switchxkblayout all %d", layout);
+  int length =
+      snprintf(request, sizeof(request), "/switchxkblayout all %d", layout);
   if (layout < 0 || length < 0 || (size_t)length >= sizeof(request))
     return -1;
 
