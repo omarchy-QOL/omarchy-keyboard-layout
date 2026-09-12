@@ -24,18 +24,18 @@ Panel {
     Quickshell.env("HOME") + "/.config/hypr/input.lua"
   readonly property string pluginPath:
     Quickshell.env("HOME") + "/.config/omarchy/plugins/" + moduleName
-  readonly property string settingsPath:
+  readonly property string legacySettingsPath:
     pluginPath + "/.settings.json"
   readonly property string trackerPath:
     pluginPath + "/native/keyboard-layoutd"
   readonly property string pulseColor: normalizedPulseColor(
-    savedSetting("pulseColor", tealColor))
+    setting("pulseColor", tealColor))
   readonly property bool animationEnabled:
-    savedSetting("animation", true) !== false
+    setting("animation", true) !== false
   readonly property bool showSingleLayout:
-    savedSetting("showSingleLayout", false) === true
+    setting("showSingleLayout", false) === true
   readonly property bool perWindowLayouts:
-    savedSetting("perWindowLayouts", false) === true
+    setting("perWindowLayouts", false) === true
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   property bool settingsPage: false
   property bool customColorEditorVisible: false
@@ -55,22 +55,9 @@ Panel {
   property real pulseOpacity: 1
   property real pulseScale: 1
   property int automaticRestoreLayout: -1
-  property var savedSettings: ({})
-
-  function savedSetting(name, fallback) {
-    var value = root.savedSettings[name]
-    return value === undefined || value === null ? fallback : value
-  }
-
-  function loadSettings(raw) {
-    try {
-      var value = JSON.parse(raw || "{}")
-      root.savedSettings = value && typeof value === "object"
-        && !Array.isArray(value) ? value : ({})
-    } catch (error) {
-      root.savedSettings = ({})
-    }
-  }
+  property var legacySettings: null
+  property bool legacySettingsLoaded: false
+  property bool legacySettingsMigrated: false
 
   function isPulseColor(value) {
     return /^#[0-9a-fA-F]{6}$/.test(String(value || "").trim())
@@ -89,14 +76,52 @@ Panel {
       : "custom"
   }
 
+  function storeSettings(next) {
+    root.settings = next
+    if (!root.bar || !root.bar.shell
+        || typeof root.bar.shell.updateEntryInline !== "function") {
+      console.warn("Keyboard Layout Pulse: inline settings are unavailable")
+      return false
+    }
+    return root.bar.shell.updateEntryInline(root.moduleName, next)
+  }
+
   function persistSettings(values) {
     var next = {}
-    for (var existing in root.savedSettings)
-      next[existing] = root.savedSettings[existing]
+    for (var existing in root.settings)
+      next[existing] = root.settings[existing]
     for (var key in values) next[key] = values[key]
+    return root.storeSettings(next)
+  }
 
-    root.savedSettings = next
-    settingsFile.setText(JSON.stringify(next, null, 2) + "\n")
+  function loadLegacySettings(raw) {
+    try {
+      var value = JSON.parse(raw || "{}")
+      root.legacySettings = value && typeof value === "object"
+        && !Array.isArray(value) ? value : null
+    } catch (error) {
+      root.legacySettings = null
+    }
+    root.legacySettingsLoaded = true
+    Qt.callLater(root.migrateLegacySettings)
+  }
+
+  function migrateLegacySettings() {
+    if (root.legacySettingsMigrated || !root.legacySettingsLoaded
+        || !root.bar || !root.bar.shell
+        || typeof root.bar.shell.updateEntryInline !== "function") return
+
+    root.legacySettingsMigrated = true
+    if (!root.legacySettings) return
+
+    var next = {}
+    for (var legacy in root.legacySettings)
+      next[legacy] = root.legacySettings[legacy]
+    for (var current in root.settings)
+      next[current] = root.settings[current]
+
+    if (JSON.stringify(next) !== JSON.stringify(root.settings))
+      root.storeSettings(next)
   }
 
   function setPulseColor(value) {
@@ -334,9 +359,11 @@ Panel {
 
   onAnimationEnabledChanged: if (!animationEnabled) resetPulse()
   onPerWindowLayoutsChanged: syncLayoutTracker()
+  onBarChanged: Qt.callLater(root.migrateLegacySettings)
+  onSettingsChanged: Qt.callLater(root.migrateLegacySettings)
 
   Component.onCompleted: {
-    settingsFile.reload()
+    legacySettingsFile.reload()
     refresh()
   }
 
@@ -400,14 +427,11 @@ Panel {
   }
 
   FileView {
-    id: settingsFile
-    path: root.settingsPath
-    watchChanges: true
-    atomicWrites: true
+    id: legacySettingsFile
+    path: root.legacySettingsPath
     printErrors: false
-    onLoaded: root.loadSettings(text())
-    onLoadFailed: root.loadSettings("")
-    onFileChanged: reload()
+    onLoaded: root.loadLegacySettings(text())
+    onLoadFailed: root.loadLegacySettings("")
   }
 
   FileView {
