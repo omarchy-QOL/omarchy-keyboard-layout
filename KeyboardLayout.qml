@@ -212,10 +212,13 @@ Panel {
     })
     var typing = physical.filter(function(keyboard) {
       var name = String(keyboard.name)
+      // Hotkey-only devices do not follow layout group switches.
       return !name.endsWith("-system-control")
         && !name.endsWith("-consumer-control")
         && name !== "video-bus"
         && !name.startsWith("power-button")
+        && !name.endsWith("-extra-buttons")
+        && !name.endsWith("-wmi-hotkeys")
     })
     return typing.length > 0 ? typing : physical
   }
@@ -346,8 +349,12 @@ Panel {
     function onRawEvent(event) {
       if (!event) return
       var name = String(event.name || "")
-      if (name.indexOf("activelayout") !== -1 || name === "configreloaded")
-        root.refresh()
+      if (name.indexOf("activelayout") !== -1) {
+        var device = String(event.data || "").split(",")[0]
+        if (device && !device.startsWith("hl-virtual-keyboard"))
+          root.keyboardName = device
+      } else if (name !== "configreloaded") return
+      root.refresh()
     }
   }
 
