@@ -20,8 +20,7 @@ architectures its toggle stays disabled; layout selection still works.
 ## Install
 
 ```bash
-omarchy plugin add \
-  https://github.com/omarchy-QOL/omarchy-keyboard-layout.git --enable
+omarchy plugin add https://github.com/omarchy-QOL/omarchy-keyboard-layout.git --enable
 ```
 
 The plugin replaces Omarchy's built-in `omarchy.keyboard-layout` bar widget.
