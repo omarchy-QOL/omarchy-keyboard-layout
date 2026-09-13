@@ -44,9 +44,25 @@ static void test_current_layout_prefers_main_typing_keyboard(void) {
   assert(hypr_json_current_layout("{\"keyboards\":[]}", &layout) == -1);
 }
 
+static void test_current_layout_prefers_main_keyd_keyboard(void) {
+  const char *keyd_devices =
+      "{\"keyboards\":["
+      "{\"name\":\"physical-keyboard\",\"active_layout_index\":0,"
+      "\"main\":false},"
+      "{\"name\":\"keyd-virtual-keyboard\",\"active_layout_index\":1,"
+      "\"main\":true}]}";
+  int layout = -1;
+  assert(hypr_json_current_layout(keyd_devices, &layout) == 0);
+  assert(layout == 1);
+}
+
 static void test_typing_keyboard_filter(void) {
   assert(hypr_keyboard_is_typing("physical-keyboard"));
+  assert(hypr_keyboard_is_typing("at-translated-set-2-keyboard"));
+  assert(hypr_keyboard_is_typing("metadot---das-keyboard-das-keyboard"));
+  assert(hypr_keyboard_is_typing("keyd-virtual-keyboard"));
   assert(!hypr_keyboard_is_typing("hl-virtual-keyboard-ime"));
+  assert(!hypr_keyboard_is_typing("remote-virtual-keyboard"));
   assert(!hypr_keyboard_is_typing("keyboard-system-control"));
   assert(!hypr_keyboard_is_typing("keyboard-consumer-control"));
   assert(!hypr_keyboard_is_typing("video-bus"));
@@ -88,6 +104,7 @@ int main(void) {
   test_active_window();
   test_device_layout();
   test_current_layout_prefers_main_typing_keyboard();
+  test_current_layout_prefers_main_keyd_keyboard();
   test_typing_keyboard_filter();
   test_invalid_json();
   test_ipc_environment();
