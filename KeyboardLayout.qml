@@ -240,7 +240,8 @@ Panel {
 
     function typingKeyboards(keyboards) {
         var physical = keyboards.filter(function (keyboard) {
-            return !String(keyboard.name).startsWith("hl-virtual-keyboard");
+            var name = String(keyboard.name);
+            return name === "keyd-virtual-keyboard" || !name.includes("virtual-keyboard");
         });
         var typing = physical.filter(function (keyboard) {
             var name = String(keyboard.name);

@@ -116,7 +116,9 @@ static int ends_with(const char *value, const char *suffix) {
 }
 
 int hypr_keyboard_is_typing(const char *name) {
-  return name != NULL && strstr(name, "virtual-keyboard") == NULL &&
+  return name != NULL &&
+         (strstr(name, "virtual-keyboard") == NULL ||
+          strcmp(name, "keyd-virtual-keyboard") == 0) &&
          !ends_with(name, "-system-control") &&
          !ends_with(name, "-consumer-control") &&
          strcmp(name, "video-bus") != 0 &&
