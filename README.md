@@ -9,18 +9,19 @@ layout change to improve visual confirmation of the layout change.
 ## Requirements
 
 - Omarchy Quattro: >= 4.0.0
-- x86-64 for optional per-window layouts
-- `json-c` for optional per-window layouts, included with Omarchy
-- One or more keyboard layouts configured in `~/.config/hypr/input.lua`
+- x86-64 for optional per-window layouts: `C`-compiled binary is shipped
+- `json-c` for optional per-window layout (included in default Omarchy installs)
+- one or more keyboard layouts configured in `~/.config/hypr/input.lua`
 
-The optional per-window mode runs a bundled helper only while it is enabled. It
-does not install a system service.
+The optional per-window mode runs a bundled helper through one shell service
+only while it is enabled. It does not install a system service. On other
+architectures its toggle stays disabled; layout selection still works.
 
 ## Install
 
 ```bash
 omarchy plugin add \
-  https://github.com/ilyaZar/omarchy-keyboard-layout.git --enable
+  https://github.com/omarchy-QOL/omarchy-keyboard-layout.git --enable
 ```
 
 The plugin replaces Omarchy's built-in `omarchy.keyboard-layout` bar widget.
@@ -90,9 +91,9 @@ omarchy plugin remove io.github.ilyazar.keyboard-layout --yes
 
 Preferences are stored on the widget's entry in Omarchy's `shell.json`.
 Preferences from the legacy `.settings.json` file are imported automatically;
-newer inline values take precedence on later starts.
-Removing the replacement restores the built-in keyboard widget and retains
-those fields, so reinstalling Keyboard Layout Pulse restores its preferences.
+newer inline values take precedence on later starts. Removing the replacement
+restores the built-in keyboard widget and retains those fields, so reinstalling
+Keyboard Layout Pulse restores its preferences.
 
 ## License
 

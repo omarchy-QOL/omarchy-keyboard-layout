@@ -14,9 +14,9 @@ shell commands, and ad-hoc JSON parsing with:
   and Hyprland configuration reloads; and
 - unit-tested state transitions and response parsing.
 
-The plugin starts `keyboard-layoutd` only while **Activate per-window layouts**
-is enabled and stops it when the setting is disabled or the shell exits. Build
-and test it with:
+The plugin's shell service starts one `keyboard-layoutd` process only while
+**Activate per-window layouts** is enabled and stops it when the setting is
+disabled or the shell exits. Build and test it with:
 
 ```bash
 make
