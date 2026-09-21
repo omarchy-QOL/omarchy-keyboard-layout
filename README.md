@@ -71,6 +71,9 @@ The plugin reads the effective layouts and `grp:*` switching option directly
 from Hyprland. It translates XKB descriptions into friendly names such as **Both
 Alt keys** and **Super + Space**.
 
+The bar and picker show variants, such as `US(intl)`, and plain `US` otherwise.
+Layout switches pulse even when their labels match.
+
 Use the gear beside the displayed shortcut to open its owning line in
 `~/.config/hypr/input.lua` with `nvim`.
 
