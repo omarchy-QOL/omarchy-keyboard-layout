@@ -6,6 +6,11 @@ A compact keyboard-layout picker for the Omarchy Quattro bar. It shows the
 active XKB layout, opens a native layout menu, and optionally pulses after a
 layout change to improve visual confirmation of the layout change.
 
+## What's new in 0.2.3
+
+- Tell layouts apart with labels like `US` and `US(intl)`.
+- See a pulse when switching between them, including on another keyboard.
+
 ## Requirements
 
 - Omarchy Quattro: >= 4.0.0
