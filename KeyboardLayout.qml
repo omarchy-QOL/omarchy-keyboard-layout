@@ -52,10 +52,9 @@ Panel {
 
     property string keyboardName: ""
     property var keyboardNames: []
-    property var deviceLayouts: []
-    property var configuredLayouts: []
+    property string layoutConfig: ""
     property var layouts: []
-    property int activeLayoutIndex: 0
+    property int activeLayoutIndex: -1
     property int cursorIndex: 0
     property bool cursorActive: false
     property string layoutFull: ""
@@ -265,42 +264,28 @@ Panel {
         var keyboard = root.selectKeyboard(keyboards);
         if (!keyboard || !keyboard.active_keymap)
             return;
-        var nextLayouts = String(keyboard.layout || "").split(",").filter(Boolean);
+        var nextLayouts = keyboard.layout ? String(keyboard.layout).split(",") : [];
+        var variants = String(keyboard.variant || "").split(",");
         var index = Number(keyboard.active_layout_index || 0);
+        var config = JSON.stringify([nextLayouts, variants]);
+        var sameConfig = root.layoutConfig === config;
+        var changed = sameConfig && root.activeLayoutIndex >= 0 && root.activeLayoutIndex !== index;
+        var automatic = root.automaticRestoreLayout === index;
 
         root.keyboardName = String(keyboard.name || "");
         root.keyboardNames = root.typingKeyboards(keyboards).map(function (item) {
             return String(item.name || "");
         }).filter(Boolean);
-        root.deviceLayouts = nextLayouts;
+        root.layoutConfig = config;
+        root.layouts = nextLayouts.map(function (layout, i) {
+            var variant = String(variants[i] || "").trim();
+            return layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
+        });
         root.activeLayoutIndex = index;
         root.layoutFull = String(keyboard.active_keymap);
-        root.updateLayouts();
-    }
-
-    function updateConfiguredLayouts(raw) {
-        try {
-            var value = String(JSON.parse(raw || "{}").str || "");
-            root.configuredLayouts = value.split(",").filter(Boolean);
-        } catch (error) {
-            root.configuredLayouts = [];
-        }
-        root.updateLayouts();
-    }
-
-    function updateLayouts() {
-        var nextLayouts = root.configuredLayouts.length > 0 ? root.configuredLayouts : root.deviceLayouts;
-        var nextLabel = nextLayouts[root.activeLayoutIndex] ? String(nextLayouts[root.activeLayoutIndex]).toUpperCase() :
-                                                              root.layoutFull.split(/\s+/)[0].substring(0,
-                                                                                                        3).toUpperCase(
-                                                                  );
-        var changed = root.layoutLabel !== "" && root.layoutLabel !== nextLabel;
-        var automatic = changed && root.automaticRestoreLayout === root.activeLayoutIndex;
-
-        root.layouts = nextLayouts;
-        root.layoutLabel = nextLabel;
+        root.layoutLabel = root.layouts[index] || root.layoutFull;
         root.multipleLayouts = nextLayouts.length > 1;
-        if (automatic) {
+        if (!sameConfig || automatic) {
             automaticRestoreTimer.stop();
             root.automaticRestoreLayout = -1;
             resetPulse();
@@ -312,8 +297,6 @@ Panel {
     function refresh() {
         if (!queryProcess.running)
             queryProcess.running = true;
-        if (!layoutProcess.running)
-            layoutProcess.running = true;
     }
 
     function switchLayouts(target) {
@@ -402,15 +385,6 @@ Panel {
         ignoreUnknownSignals: true
         function onRestoreRequested(layout) {
             root.expectAutomaticRestore(layout);
-        }
-    }
-
-    Process {
-        id: layoutProcess
-        command: ["hyprctl", "-j", "getoption", "input:kb_layout"]
-        stdout: StdioCollector {
-            waitForEnd: true
-            onStreamFinished: root.updateConfiguredLayouts(text)
         }
     }
 
@@ -602,7 +576,7 @@ Panel {
                             required property var modelData
                             required property int index
                             width: layoutColumn.width
-                            text: String(modelData).toUpperCase()
+                            text: modelData
                             foreground: root.bar.foreground
                             fontFamily: root.bar.fontFamily
                             fontSize: Style.font.bodySmall
