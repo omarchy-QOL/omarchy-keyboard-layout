@@ -2,6 +2,11 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## 0.2.3 - 2026-09-21
+
+- Show variants in the bar and picker, such as `US(intl)` and `US(dvorak)`.
+- Pulse on layout switches even when labels match or the keyboard changes.
+
 ## 0.2.2 - 2026-09-13
 
 - Follow layout events from the physical keyboard in use and ignore hotkey-only
