@@ -37,6 +37,9 @@ position.
 - Click the layout label to choose a configured language.
 - Scroll over the label to move to the next or previous language.
 - Open **Settings** from the language menu to customize the widget.
+- Set a short bar label for each configured layout under **Bar labels** (for
+  example, `EN` for `RU(ruchey_en)` and `RU` for `RU(ruchey_ru)`). Press Enter
+  to save; leave a field blank to restore its XKB name.
 - Enable **Show with one layout** to keep the widget visible with one layout.
 - Under settings, toggle on/off:
   - animation (pulsing + colored indicator)

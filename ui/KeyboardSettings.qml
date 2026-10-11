@@ -18,7 +18,9 @@ Column {
     required property bool trackerSupportKnown
     required property bool trackerSupported
     required property string shortcutLabel
-    readonly property bool keyboardInputActive: colorDropdown.popupOpen || (customColorEditorVisible && customColorField.activeFocus)
+    required property var layoutKeys
+    required property var layoutLabels
+    readonly property bool keyboardInputActive: colorDropdown.popupOpen || layoutLabelEditor.activeFocus || (customColorEditorVisible && customColorField.activeFocus)
     readonly property int compactToggleHeight: Math.round(Style.font.caption * 1.2)
     property bool customColorEditorVisible: false
 
@@ -27,6 +29,7 @@ Column {
     signal singleLayoutRequested(bool enabled)
     signal perWindowLayoutsRequested(bool enabled)
     signal shortcutEditRequested()
+    signal layoutLabelEdited(int index, string value)
     signal backRequested()
     signal closeRequested()
     signal focusRequested()
@@ -195,6 +198,66 @@ Column {
         foreground: root.foreground
         fontFamily: root.fontFamily
         fontSize: Style.font.bodySmall
+    }
+
+    FocusScope {
+        id: layoutLabelEditor
+        width: parent.width
+        implicitHeight: layoutAliasColumn.implicitHeight
+
+        Column {
+            id: layoutAliasColumn
+            width: parent.width
+            spacing: Style.space(6)
+
+            Text {
+                width: parent.width
+                text: "Bar labels (leave blank to use the XKB name)"
+                color: Qt.darker(root.foreground, 1.4)
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.WordWrap
+            }
+
+            Repeater {
+                id: layoutAliasFields
+                    model: root.layoutKeys
+
+                Row {
+                    required property var modelData
+                    required property int index
+                    width: root.width
+                    spacing: Style.space(6)
+
+                    Text {
+                        width: parent.width - layoutAliasField.width - parent.spacing
+                        height: layoutAliasField.implicitHeight
+                        text: modelData
+                        color: root.foreground
+                        font.family: root.fontFamily
+                        font.pixelSize: Style.font.bodySmall
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    TextField {
+                        id: layoutAliasField
+                        width: Style.space(70)
+                        placeholderText: "Auto"
+                        text: {
+                            var aliases = root.layoutLabels;
+                            return aliases && typeof aliases === "object" ? String(aliases[modelData] || "") : "";
+                        }
+                        foreground: root.foreground
+                        font.family: root.fontFamily
+                        onEditingFinished: {
+                            root.layoutLabelEdited(index, text);
+                        }
+                        Keys.onEscapePressed: root.backRequested()
+                    }
+                }
+            }
+        }
     }
 
     Item {

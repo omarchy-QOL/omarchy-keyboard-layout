@@ -32,6 +32,7 @@ Panel {
     property var keyboardNames: []
     property string layoutConfig: ""
     property var layouts: []
+    property var layoutKeys: []
     property int activeLayoutIndex: -1
     property int cursorIndex: 0
     property bool cursorActive: false
@@ -58,6 +59,36 @@ Panel {
         for (let key in values)
             next[key] = values[key];
         return root.storeSettings(next);
+    }
+
+    function layoutDisplayName(layout, variant) {
+        var key = layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
+        var aliases = setting("layoutLabels", {});
+        var alias = aliases && typeof aliases === "object" ? String(aliases[key] || "").trim() : "";
+        return alias || key;
+    }
+
+    function setLayoutDisplayName(index, value) {
+        if (index < 0 || index >= root.layoutKeys.length)
+            return;
+        var aliases = {};
+        var current = setting("layoutLabels", {});
+        if (current && typeof current === "object")
+            for (var key in current)
+                aliases[key] = current[key];
+        var name = String(value || "").trim();
+        var layoutKey = root.layoutKeys[index];
+        if (name)
+            aliases[layoutKey] = name;
+        else
+            delete aliases[layoutKey];
+        if (!persistSettings({ layoutLabels: aliases }))
+            return;
+        var nextLayouts = root.layouts.slice();
+        nextLayouts[index] = name || layoutKey;
+        root.layouts = nextLayouts;
+        if (root.activeLayoutIndex === index)
+            root.layoutLabel = nextLayouts[index];
     }
 
     function setPulseColor(value) {
@@ -183,9 +214,12 @@ Panel {
             return String(item.name || "");
         }).filter(Boolean);
         root.layoutConfig = config;
-        root.layouts = nextLayouts.map(function (layout, i) {
+        root.layoutKeys = nextLayouts.map(function (layout, i) {
             var variant = String(variants[i] || "").trim();
             return layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
+        });
+        root.layouts = nextLayouts.map(function (layout, i) {
+            return root.layoutDisplayName(layout, String(variants[i] || "").trim());
         });
         root.activeLayoutIndex = index;
         root.layoutFull = String(keyboard.active_keymap);
@@ -533,6 +567,11 @@ Panel {
                     trackerSupportKnown: root.trackerSupportKnown
                     trackerSupported: root.trackerSupported
                     shortcutLabel: layoutShortcut.label
+                    layoutKeys: root.layoutKeys
+                    layoutLabels: root.setting("layoutLabels", {})
+                    onLayoutLabelEdited: function (index, value) {
+                        root.setLayoutDisplayName(index, value);
+                    }
                     onPulseColorSelected: function (value) {
                         root.setPulseColor(value);
                     }
