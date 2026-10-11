@@ -54,6 +54,7 @@ Panel {
     property var keyboardNames: []
     property string layoutConfig: ""
     property var layouts: []
+    property var layoutKeys: []
     property int activeLayoutIndex: -1
     property int cursorIndex: 0
     property bool cursorActive: false
@@ -98,6 +99,36 @@ Panel {
         for (var key in values)
             next[key] = values[key];
         return root.storeSettings(next);
+    }
+
+    function layoutDisplayName(layout, variant) {
+        var key = layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
+        var aliases = setting("layoutLabels", {});
+        var alias = aliases && typeof aliases === "object" ? String(aliases[key] || "").trim() : "";
+        return alias || key;
+    }
+
+    function setLayoutDisplayName(index, value) {
+        if (index < 0 || index >= root.layoutKeys.length)
+            return;
+        var aliases = {};
+        var current = setting("layoutLabels", {});
+        if (current && typeof current === "object")
+            for (var key in current)
+                aliases[key] = current[key];
+        var name = String(value || "").trim();
+        var layoutKey = root.layoutKeys[index];
+        if (name)
+            aliases[layoutKey] = name;
+        else
+            delete aliases[layoutKey];
+        if (!persistSettings({ layoutLabels: aliases }))
+            return;
+        var nextLayouts = root.layouts.slice();
+        nextLayouts[index] = name || layoutKey;
+        root.layouts = nextLayouts;
+        if (root.activeLayoutIndex === index)
+            root.layoutLabel = nextLayouts[index];
     }
 
     function loadLegacySettings(raw) {
@@ -277,9 +308,12 @@ Panel {
             return String(item.name || "");
         }).filter(Boolean);
         root.layoutConfig = config;
-        root.layouts = nextLayouts.map(function (layout, i) {
+        root.layoutKeys = nextLayouts.map(function (layout, i) {
             var variant = String(variants[i] || "").trim();
             return layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
+        });
+        root.layouts = nextLayouts.map(function (layout, i) {
+            return root.layoutDisplayName(layout, String(variants[i] || "").trim());
         });
         root.activeLayoutIndex = index;
         root.layoutFull = String(keyboard.active_keymap);
@@ -752,6 +786,53 @@ Panel {
                         text: "Keyboard layouts & shortcut"
                         foreground: root.bar.foreground
                         fontFamily: root.bar.fontFamily
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: "Bar labels (leave blank to use the XKB name)"
+                        color: Qt.darker(root.bar.foreground, 1.4)
+                        font.family: root.bar.fontFamily
+                        font.pixelSize: Style.font.caption
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Repeater {
+                        model: root.layoutKeys
+
+                        Row {
+                            required property var modelData
+                            required property int index
+                            width: settingsColumn.width
+                            spacing: Style.space(6)
+
+                            Text {
+                                width: parent.width - layoutAliasField.width - parent.spacing
+                                height: layoutAliasField.implicitHeight
+                                text: modelData
+                                color: root.bar.foreground
+                                font.family: root.bar.fontFamily
+                                font.pixelSize: Style.font.bodySmall
+                                elide: Text.ElideRight
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            TextField {
+                                id: layoutAliasField
+                                width: Style.space(70)
+                                placeholderText: "Auto"
+                                text: {
+                                    var aliases = root.setting("layoutLabels", {});
+                                    return aliases && typeof aliases === "object" ? String(aliases[modelData] || "") : "";
+                                }
+                                foreground: root.bar.foreground
+                                font.family: root.bar.fontFamily
+                                onEditingFinished: {
+                                    root.setLayoutDisplayName(index, text);
+                                }
+                                Keys.onEscapePressed: root.closeSettings()
+                            }
+                        }
                     }
 
                     Item {
