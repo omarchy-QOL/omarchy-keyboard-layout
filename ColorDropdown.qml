@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls as Controls
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Item {
@@ -11,13 +12,13 @@ Item {
     property string value: "custom"
     property string customColor: "#2aa198"
     property var presets: []
-    property color foreground: Color.popups.text
-    property color background: Color.popups.background
-    property color popupBorder: Color.popups.border
-    property color accent: Color.accent
+    property color foreground: Commons.Color.popups.text
+    property color background: Commons.Color.popups.background
+    property color popupBorder: Commons.Color.popups.border
+    property color accent: Commons.Color.accent
     property string fontFamily: Style.font.family
     readonly property bool popupOpen: popup.opened
-    readonly property var popupBorderSpec: Border.localOrSurfaceSpec("popups", "border", popupBorder, Color.popups.border, Style.normalBorderWidth)
+    readonly property var popupBorderSpec: Border.localOrSurfaceSpec("popups", "border", popupBorder, Commons.Color.popups.border, Style.normalBorderWidth)
 
     signal changed(string value)
 

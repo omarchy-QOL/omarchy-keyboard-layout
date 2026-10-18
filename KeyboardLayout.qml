@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "lib/shortcuts" as Shortcuts
 
@@ -45,7 +46,7 @@ Panel {
     readonly property bool trackerSupportKnown: trackerService ? trackerService.supportKnown : false
     readonly property bool trackerSupported: trackerService ? trackerService.supported : false
     readonly property bool perWindowLayoutsActive: perWindowLayouts && trackerSupported
-    readonly property color urgent: bar ? bar.urgent : Color.urgent
+    readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
     property bool settingsPage: false
     property bool customColorEditorVisible: false
     property int keyboardOptionsLine: 1
@@ -335,7 +336,7 @@ Panel {
     }
 
     onOpenedChanged: {
-        if (!opened)
+        if (!root.opened)
             return;
         root.settingsPage = false;
         root.cursorIndex = root.activeLayoutIndex;
@@ -477,7 +478,7 @@ Panel {
 
     WidgetButton {
         id: button
-        anchors.fill: parent
+        anchors.fill: button.parent
         bar: root.bar
         text: ""
         hasVisualContent: root.layoutLabel !== ""
@@ -536,7 +537,7 @@ Panel {
 
         PanelKeyCatcher {
             id: keyCatcher
-            anchors.fill: parent
+            anchors.fill: keyCatcher.parent
             blocked: root.settingsPage && (colorDropdown.popupOpen || (root.customColorEditorVisible && customColorField.activeFocus))
             onMoveRequested: function (dx, dy) {
                 if (!root.settingsPage)
@@ -627,8 +628,8 @@ Panel {
                             text: "Pulse color"
                             foreground: root.bar.foreground
                             fontFamily: root.bar.fontFamily
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: pulseColorHeader.parent.left
+                            anchors.verticalCenter: pulseColorHeader.parent.verticalCenter
                         }
 
                         Row {
@@ -640,9 +641,9 @@ Panel {
                             PanelSectionHeader {
                                 id: animationToggleLabel
                                 text: "Animation"
-                                foreground: root.animationEnabled ? root.bar.foreground : Color.muted
+                                foreground: root.animationEnabled ? root.bar.foreground : Commons.Color.muted
                                 fontFamily: root.bar.fontFamily
-                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.verticalCenter: animationToggleLabel.parent.verticalCenter
                             }
 
                             ToggleSwitch {
@@ -653,7 +654,7 @@ Panel {
                                 cursorPad: Style.space(3)
                                 checked: root.animationEnabled
                                 foreground: root.bar.foreground
-                                onToggled: root.setAnimationEnabled(!checked)
+                                onToggled: root.setAnimationEnabled(!animationToggle.checked)
 
                                 PanelToolTip {
                                     visible: animationToggle.containsMouse
@@ -683,6 +684,7 @@ Panel {
                     }
 
                     Row {
+                        id: customColorRow
                         visible: root.customColorEditorVisible
                         width: parent.width
                         spacing: Style.space(6)
@@ -691,14 +693,14 @@ Panel {
 
                         TextField {
                             id: customColorField
-                            width: parent.width - applyColorButton.width - parent.spacing
+                            width: customColorRow.width - applyColorButton.width - customColorRow.spacing
                             placeholderText: "#RRGGBB"
                             foreground: root.bar.foreground
                             font.family: root.bar.fontFamily
                             validator: RegularExpressionValidator {
                                 regularExpression: /^#[0-9a-fA-F]{6}$/
                             }
-                            onAccepted: root.applyPulseColor(text)
+                            onAccepted: root.applyPulseColor(customColorField.text)
                             Keys.onEscapePressed: root.closeSettings()
                         }
 
@@ -764,8 +766,8 @@ Panel {
 
                         PanelActionButton {
                             id: editShortcutButton
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.right: editShortcutButton.parent.right
+                            anchors.verticalCenter: editShortcutButton.parent.verticalCenter
                             iconText: "󰒓"
                             tooltipText: "Edit layouts and keybinding shortcut"
                             foreground: root.bar.foreground
@@ -784,23 +786,23 @@ Panel {
 
                         PanelSectionHeader {
                             id: singleLayoutHeader
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: singleLayoutHeader.parent.left
+                            anchors.verticalCenter: singleLayoutHeader.parent.verticalCenter
                             text: "Show with one layout"
-                            foreground: root.showSingleLayout ? root.bar.foreground : Color.muted
+                            foreground: root.showSingleLayout ? root.bar.foreground : Commons.Color.muted
                             fontFamily: root.bar.fontFamily
                         }
 
                         ToggleSwitch {
                             id: singleLayoutToggle
-                            anchors.right: parent.right
+                            anchors.right: singleLayoutToggle.parent.right
                             anchors.verticalCenter: singleLayoutHeader.verticalCenter
                             anchors.verticalCenterOffset: Math.round(singleLayoutHeader.topPadding / 2)
                             trackHeight: Math.round(singleLayoutHeader.font.pixelSize * 1.2)
                             cursorPad: Style.space(3)
                             checked: root.showSingleLayout
                             foreground: root.bar.foreground
-                            onToggled: root.setShowSingleLayout(!checked)
+                            onToggled: root.setShowSingleLayout(!singleLayoutToggle.checked)
 
                             PanelToolTip {
                                 visible: singleLayoutToggle.containsMouse
@@ -817,19 +819,19 @@ Panel {
 
                         PanelSectionHeader {
                             id: perWindowHeader
-                            anchors.left: parent.left
+                            anchors.left: perWindowHeader.parent.left
                             anchors.right: perWindowToggle.left
                             anchors.rightMargin: Style.space(6)
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenter: perWindowHeader.parent.verticalCenter
                             text: "Activate per-window layouts"
                             elide: Text.ElideRight
-                            foreground: root.perWindowLayoutsActive ? root.bar.foreground : Color.muted
+                            foreground: root.perWindowLayoutsActive ? root.bar.foreground : Commons.Color.muted
                             fontFamily: root.bar.fontFamily
                         }
 
                         ToggleSwitch {
                             id: perWindowToggle
-                            anchors.right: parent.right
+                            anchors.right: perWindowToggle.parent.right
                             anchors.verticalCenter: perWindowHeader.verticalCenter
                             anchors.verticalCenterOffset: Math.round(perWindowHeader.topPadding / 2)
                             trackHeight: Math.round(perWindowHeader.font.pixelSize * 1.2)
@@ -837,7 +839,7 @@ Panel {
                             enabled: root.trackerSupportKnown && root.trackerSupported
                             checked: root.perWindowLayoutsActive
                             foreground: root.bar.foreground
-                            onToggled: root.setPerWindowLayouts(!checked)
+                            onToggled: root.setPerWindowLayouts(!perWindowToggle.checked)
 
                             PanelToolTip {
                                 visible: perWindowToggle.containsMouse
