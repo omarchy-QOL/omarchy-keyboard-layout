@@ -7,8 +7,7 @@ import Quickshell.Io
 Item {
     id: root
 
-    readonly property string pluginPath: Quickshell.env("HOME")
-                                         + "/.config/omarchy/plugins/io.github.ilyazar.keyboard-layout"
+    readonly property string pluginPath: Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.ilyazar.keyboard-layout"
     readonly property string trackerPath: pluginPath + "/native/keyboard-layoutd"
 
     property bool trackingEnabled: false

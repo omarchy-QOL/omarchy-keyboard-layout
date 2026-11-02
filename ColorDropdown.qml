@@ -17,8 +17,7 @@ Item {
     property color accent: Color.accent
     property string fontFamily: Style.font.family
     readonly property bool popupOpen: popup.opened
-    readonly property var popupBorderSpec: Border.localOrSurfaceSpec("popups", "border", popupBorder,
-                                                                     Color.popups.border, Style.normalBorderWidth)
+    readonly property var popupBorderSpec: Border.localOrSurfaceSpec("popups", "border", popupBorder, Color.popups.border, Style.normalBorderWidth)
 
     signal changed(string value)
 

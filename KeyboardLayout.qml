@@ -78,8 +78,7 @@ Panel {
 
     function presetForColor(value) {
         var color = normalizedPulseColor(value);
-        return color === tealColor || color === purpleColor || color === blueColor || color === yellowColor ? color :
-                                                                                                              "custom";
+        return color === tealColor || color === purpleColor || color === blueColor || color === yellowColor ? color : "custom";
     }
 
     function storeSettings(next) {
@@ -112,8 +111,7 @@ Panel {
     }
 
     function migrateLegacySettings() {
-        if (root.legacySettingsMigrated || !root.legacySettingsLoaded || !root.bar || !root.bar.shell
-                || typeof root.bar.shell.updateEntryInline !== "function")
+        if (root.legacySettingsMigrated || !root.legacySettingsLoaded || !root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function")
             return;
         root.legacySettingsMigrated = true;
         if (!root.legacySettings)
@@ -133,8 +131,8 @@ Panel {
             return;
         var color = normalizedPulseColor(value);
         persistSettings({
-                            pulseColor: color
-                        });
+            pulseColor: color
+        });
         customColorField.text = color;
     }
 
@@ -153,24 +151,24 @@ Panel {
 
     function setAnimationEnabled(enabled) {
         persistSettings({
-                            animation: enabled
-                        });
+            animation: enabled
+        });
         if (!enabled)
             resetPulse();
     }
 
     function setShowSingleLayout(enabled) {
         persistSettings({
-                            showSingleLayout: enabled
-                        });
+            showSingleLayout: enabled
+        });
         if (!enabled && !root.multipleLayouts)
             root.close();
     }
 
     function setPerWindowLayouts(enabled) {
         persistSettings({
-                            perWindowLayouts: enabled
-                        });
+            perWindowLayouts: enabled
+        });
         syncLayoutTracker();
     }
 
@@ -233,8 +231,7 @@ Panel {
 
     function editKeyboardShortcut() {
         root.close();
-        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "+" + String(root.keyboardOptionsLine),
-                                 "+normal! zz", root.keyboardConfigPath]);
+        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "+" + String(root.keyboardOptionsLine), "+normal! zz", root.keyboardConfigPath]);
     }
 
     function typingKeyboards(keyboards) {
@@ -245,9 +242,7 @@ Panel {
         var typing = physical.filter(function (keyboard) {
             var name = String(keyboard.name);
             // Hotkey-only devices do not follow layout group switches.
-            return !name.endsWith("-system-control") && !name.endsWith("-consumer-control") && name !== "video-bus" &&
-                    !name.startsWith("power-button") && !name.endsWith("-extra-buttons") && !name.endsWith(
-                        "-wmi-hotkeys");
+            return !name.endsWith("-system-control") && !name.endsWith("-consumer-control") && name !== "video-bus" && !name.startsWith("power-button") && !name.endsWith("-extra-buttons") && !name.endsWith("-wmi-hotkeys");
         });
         return typing.length > 0 ? typing : physical;
     }
@@ -350,7 +345,7 @@ Panel {
     }
 
     onAnimationEnabledChanged: if (!animationEnabled)
-                                   resetPulse()
+        resetPulse()
     onPerWindowLayoutsChanged: syncLayoutTracker()
     onTrackerServiceChanged: syncLayoutTracker()
     onBarChanged: Qt.callLater(root.migrateLegacySettings)
@@ -542,8 +537,7 @@ Panel {
         PanelKeyCatcher {
             id: keyCatcher
             anchors.fill: parent
-            blocked: root.settingsPage && (colorDropdown.popupOpen || (root.customColorEditorVisible
-                                                                       && customColorField.activeFocus))
+            blocked: root.settingsPage && (colorDropdown.popupOpen || (root.customColorEditorVisible && customColorField.activeFocus))
             onMoveRequested: function (dx, dy) {
                 if (!root.settingsPage)
                     root.moveCursor(dy !== 0 ? dy : dx);
@@ -663,8 +657,7 @@ Panel {
 
                                 PanelToolTip {
                                     visible: animationToggle.containsMouse
-                                    text: root.animationEnabled ? "Disable the layout-change animation" :
-                                                                  "Enable the layout-change animation"
+                                    text: root.animationEnabled ? "Disable the layout-change animation" : "Enable the layout-change animation"
                                     fontFamily: root.bar.fontFamily
                                 }
                             }
@@ -677,9 +670,7 @@ Panel {
                         enabled: root.animationEnabled
                         opacity: root.animationEnabled ? 1 : 0.35
                         value: root.customColorEditorVisible ? "custom" : root.presetForColor(root.pulseColor)
-                        customColor: root.isPulseColor(customColorField.text) ? root.normalizedPulseColor(
-                                                                                    customColorField.text) :
-                                                                                root.pulseColor
+                        customColor: root.isPulseColor(customColorField.text) ? root.normalizedPulseColor(customColorField.text) : root.pulseColor
                         presets: root.colorPresets
                         foreground: root.bar.foreground
                         fontFamily: root.bar.fontFamily
@@ -725,8 +716,7 @@ Panel {
                     }
 
                     Text {
-                        visible: root.animationEnabled && root.customColorEditorVisible && customColorField.text !== ""
-                                 && !customColorField.acceptableInput
+                        visible: root.animationEnabled && root.customColorEditorVisible && customColorField.text !== "" && !customColorField.acceptableInput
                         width: parent.width
                         text: "Use #RRGGBB, for example #2aa198."
                         color: Qt.darker(root.bar.foreground, 1.4)
@@ -814,8 +804,7 @@ Panel {
 
                             PanelToolTip {
                                 visible: singleLayoutToggle.containsMouse
-                                text: root.showSingleLayout ? "Hide when only one layout is configured" :
-                                                              "Keep visible when only one layout is configured"
+                                text: root.showSingleLayout ? "Hide when only one layout is configured" : "Keep visible when only one layout is configured"
                                 fontFamily: root.bar.fontFamily
                             }
                         }
@@ -852,10 +841,7 @@ Panel {
 
                             PanelToolTip {
                                 visible: perWindowToggle.containsMouse
-                                text: root.trackerSupported ? (root.perWindowLayoutsActive
-                                                               ? "Use one layout across all windows" :
-                                                                 "Remember the layout used in each window") :
-                                                              "Per-window layouts require x86-64"
+                                text: root.trackerSupported ? (root.perWindowLayoutsActive ? "Use one layout across all windows" : "Remember the layout used in each window") : "Per-window layouts require x86-64"
                                 fontFamily: root.bar.fontFamily
                             }
                         }
