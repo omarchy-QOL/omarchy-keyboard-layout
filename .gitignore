@@ -3,3 +3,5 @@
 /native/build/
 /native/compile_commands.json
 /native/keyboard-layoutd
+.agents/
+.omarchy-plugin-dev/
