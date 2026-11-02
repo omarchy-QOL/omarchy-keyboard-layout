@@ -42,12 +42,15 @@ static void test_current_layout_prefers_main_typing_keyboard(void) {
   assert(hypr_json_current_layout(fallback, &layout) == 0);
   assert(layout == 2);
   assert(hypr_json_current_layout("{\"keyboards\":[]}", &layout) == -1);
-  const char *laptop = "{\"keyboards\":["
-      "{\"name\":\"asus-wmi-hotkeys\",\"active_layout_index\":1,\"main\":true},"
-      "{\"name\":\"at-translated-set-2-keyboard\",\"active_layout_index\":0,\"main\":false}]}";
+
+  const char *laptop =
+      "{\"keyboards\":["
+      "{\"name\":\"asus-wmi-hotkeys\",\"active_layout_index\":1,"
+      "\"main\":true},"
+      "{\"name\":\"at-translated-set-2-keyboard\",\"active_layout_index\":0,"
+      "\"main\":false}]}";
   assert(hypr_json_current_layout(laptop, &layout) == 0);
   assert(layout == 0);
-
 }
 
 static void test_current_layout_prefers_main_keyd_keyboard(void) {
