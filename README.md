@@ -97,10 +97,8 @@ omarchy plugin remove io.github.ilyazar.keyboard-layout --yes
 ```
 
 Preferences are stored on the widget's entry in Omarchy's `shell.json`.
-Preferences from the legacy `.settings.json` file are imported automatically;
-newer inline values take precedence on later starts. Removing the replacement
-restores the built-in keyboard widget and retains those fields, so reinstalling
-Keyboard Layout Pulse restores its preferences.
+Removing the replacement restores the built-in keyboard widget and retains
+your preferences for reinstalling Keyboard Layout Pulse.
 
 ## License
 

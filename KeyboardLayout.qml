@@ -36,8 +36,6 @@ Panel {
         }
     ]
     readonly property string keyboardConfigPath: Quickshell.env("HOME") + "/.config/hypr/input.lua"
-    readonly property string pluginPath: Quickshell.env("HOME") + "/.config/omarchy/plugins/" + moduleName
-    readonly property string legacySettingsPath: pluginPath + "/.settings.json"
     readonly property var trackerService: bar?.shell?.serviceFor(moduleName)
     readonly property string pulseColor: normalizedPulseColor(setting("pulseColor", tealColor))
     readonly property bool animationEnabled: setting("animation", true) !== false
@@ -65,9 +63,6 @@ Panel {
     property real pulseOpacity: 1
     property real pulseScale: 1
     property int automaticRestoreLayout: -1
-    property var legacySettings: null
-    property bool legacySettingsLoaded: false
-    property bool legacySettingsMigrated: false
 
     function isPulseColor(value) {
         return /^#[0-9a-fA-F]{6}$/.test(String(value || "").trim());
@@ -94,38 +89,11 @@ Panel {
 
     function persistSettings(values) {
         var next = {};
-        for (var existing in root.settings)
+        for (let existing in root.settings)
             next[existing] = root.settings[existing];
-        for (var key in values)
+        for (let key in values)
             next[key] = values[key];
         return root.storeSettings(next);
-    }
-
-    function loadLegacySettings(raw) {
-        try {
-            var value = JSON.parse(raw || "{}");
-            root.legacySettings = value && typeof value === "object" && !Array.isArray(value) ? value : null;
-        } catch (error) {
-            root.legacySettings = null;
-        }
-        root.legacySettingsLoaded = true;
-        Qt.callLater(root.migrateLegacySettings);
-    }
-
-    function migrateLegacySettings() {
-        if (root.legacySettingsMigrated || !root.legacySettingsLoaded || !root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function")
-            return;
-        root.legacySettingsMigrated = true;
-        if (!root.legacySettings)
-            return;
-        var next = {};
-        for (var legacy in root.legacySettings)
-            next[legacy] = root.legacySettings[legacy];
-        for (var current in root.settings)
-            next[current] = root.settings[current];
-
-        if (JSON.stringify(next) !== JSON.stringify(root.settings))
-            root.storeSettings(next);
     }
 
     function setPulseColor(value) {
@@ -207,7 +175,7 @@ Panel {
         var lines = String(raw || "").split("\n");
         var commentedLine = 1;
 
-        for (var index = 0; index < lines.length; index++) {
+        for (let index = 0; index < lines.length; index++) {
             if (/^\s*kb_options\s*=/.test(lines[index])) {
                 root.keyboardOptionsLine = index + 1;
                 return;
@@ -350,13 +318,7 @@ Panel {
         resetPulse()
     onPerWindowLayoutsChanged: syncLayoutTracker()
     onTrackerServiceChanged: syncLayoutTracker()
-    onBarChanged: Qt.callLater(root.migrateLegacySettings)
-    onSettingsChanged: Qt.callLater(root.migrateLegacySettings)
-
-    Component.onCompleted: {
-        legacySettingsFile.reload();
-        refresh();
-    }
+    Component.onCompleted: refresh()
 
     Shortcuts.XkbGroupOption {
         id: layoutShortcut
@@ -369,7 +331,7 @@ Panel {
                 return;
             var name = String(event.name || "");
             if (name.indexOf("activelayout") !== -1) {
-                var device = String(event.data || "").split(",")[0];
+                let device = String(event.data || "").split(",")[0];
                 if (device && !device.startsWith("hl-virtual-keyboard"))
                     root.keyboardName = device;
             } else if (name !== "configreloaded")
@@ -399,14 +361,6 @@ Panel {
                 }
             }
         }
-    }
-
-    FileView {
-        id: legacySettingsFile
-        path: root.legacySettingsPath
-        printErrors: false
-        onLoaded: root.loadLegacySettings(text())
-        onLoadFailed: root.loadLegacySettings("")
     }
 
     FileView {

@@ -25,7 +25,7 @@ Item {
     function currentLabel() {
         if (value === "custom")
             return "Custom";
-        for (var index = 0; index < presets.length; index++) {
+        for (let index = 0; index < presets.length; index++) {
             if (String(presets[index].value) === value)
                 return String(presets[index].label);
         }
