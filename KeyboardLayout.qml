@@ -46,6 +46,7 @@ Panel {
     readonly property bool trackerSupportKnown: trackerService ? trackerService.supportKnown : false
     readonly property bool trackerSupported: trackerService ? trackerService.supported : false
     readonly property bool perWindowLayoutsActive: perWindowLayouts && trackerSupported
+    readonly property int compactToggleHeight: Math.round(Style.font.caption * 1.2)
     readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
     property bool settingsPage: false
     property bool customColorEditorVisible: false
@@ -532,7 +533,7 @@ Panel {
         bar: root.bar
         open: root.opened
         focusTarget: keyCatcher
-        contentWidth: panel.fittedContentWidth(Style.space(root.settingsPage ? 260 : 180))
+        contentWidth: panel.fittedContentWidth(root.settingsPage ? Style.space(260) : (panelColumn.implicitHeight > 0 ? panel.contentHeight : Style.space(180)))
         contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight)
 
         PanelKeyCatcher {
@@ -595,6 +596,7 @@ Panel {
                     }
 
                     Button {
+                        id: settingsButton
                         width: layoutColumn.width
                         text: "Settings"
                         foreground: root.bar.foreground
@@ -609,6 +611,16 @@ Panel {
                                 return;
                             root.cursorActive = true;
                             root.cursorIndex = root.layouts.length;
+                        }
+
+                        Text {
+                            anchors.right: parent.right
+                            anchors.rightMargin: settingsButton.horizontalPadding
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: ""
+                            color: settingsButton.foreground
+                            font.family: settingsButton.fontFamily
+                            font.pixelSize: settingsButton.fontSize
                         }
                     }
                 }
@@ -628,6 +640,7 @@ Panel {
                             text: "Pulse color"
                             foreground: root.bar.foreground
                             fontFamily: root.bar.fontFamily
+                            fontSize: Style.font.bodySmall
                             anchors.left: pulseColorHeader.parent.left
                             anchors.verticalCenter: pulseColorHeader.parent.verticalCenter
                         }
@@ -636,21 +649,22 @@ Panel {
                             id: animationToggleRow
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
+                            anchors.verticalCenterOffset: Math.round(pulseColorHeader.topPadding / 2)
                             spacing: Style.space(5)
 
-                            PanelSectionHeader {
+                            Text {
                                 id: animationToggleLabel
                                 text: "Animation"
-                                foreground: root.animationEnabled ? root.bar.foreground : Commons.Color.muted
-                                fontFamily: root.bar.fontFamily
+                                color: root.animationEnabled ? root.bar.foreground : Qt.darker(root.bar.foreground, 1.4)
+                                font.family: root.bar.fontFamily
+                                font.pixelSize: Style.font.bodySmall
                                 anchors.verticalCenter: animationToggleLabel.parent.verticalCenter
                             }
 
                             ToggleSwitch {
                                 id: animationToggle
                                 anchors.verticalCenter: animationToggleLabel.verticalCenter
-                                anchors.verticalCenterOffset: Math.round(animationToggleLabel.topPadding / 2)
-                                trackHeight: Math.round(animationToggleLabel.font.pixelSize * 1.2)
+                                trackHeight: root.compactToggleHeight
                                 cursorPad: Style.space(3)
                                 checked: root.animationEnabled
                                 foreground: root.bar.foreground
@@ -745,16 +759,17 @@ Panel {
                         text: "Keyboard layouts & shortcut"
                         foreground: root.bar.foreground
                         fontFamily: root.bar.fontFamily
+                        fontSize: Style.font.bodySmall
                     }
 
                     Item {
                         width: parent.width
-                        implicitHeight: Math.max(shortcutText.implicitHeight, editShortcutButton.implicitHeight)
+                        implicitHeight: Math.max(shortcutText.implicitHeight, shortcutControl.implicitHeight)
 
                         Text {
                             id: shortcutText
                             anchors.left: parent.left
-                            anchors.right: editShortcutButton.left
+                            anchors.right: shortcutControl.left
                             anchors.rightMargin: Style.space(6)
                             anchors.verticalCenter: parent.verticalCenter
                             text: layoutShortcut.label
@@ -764,41 +779,68 @@ Panel {
                             elide: Text.ElideRight
                         }
 
-                        PanelActionButton {
-                            id: editShortcutButton
-                            anchors.right: editShortcutButton.parent.right
-                            anchors.verticalCenter: editShortcutButton.parent.verticalCenter
-                            iconText: "󰒓"
-                            tooltipText: "Edit layouts and keybinding shortcut"
-                            foreground: root.bar.foreground
-                            fontFamily: root.bar.fontFamily
-                            fontSize: Style.font.bodySmall
-                            size: Style.space(24)
-                            bordered: true
-                            focusable: true
-                            onClicked: root.editKeyboardShortcut()
+                        Item {
+                            id: shortcutControl
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: singleLayoutToggle.implicitWidth
+                            implicitHeight: editShortcutButton.implicitHeight
+
+                            PanelActionButton {
+                                id: editShortcutButton
+                                anchors.centerIn: parent
+                                tooltipText: "Edit layouts and keybinding shortcut"
+                                foreground: root.bar.foreground
+                                fontFamily: root.bar.fontFamily
+                                fontSize: Style.font.bodySmall
+                                size: singleLayoutToggle.trackWidth
+                                bordered: true
+                                focusable: true
+                                onClicked: root.editKeyboardShortcut()
+
+                                Text {
+                                    id: shortcutGear
+                                    readonly property rect glyphBounds: shortcutGearMetrics.tightBoundingRect
+                                    x: (editShortcutButton.width - glyphBounds.width) / 2 - glyphBounds.x
+                                    y: (editShortcutButton.height - glyphBounds.height) / 2 - baselineOffset - glyphBounds.y
+                                    text: "󰒓"
+                                    textFormat: Text.PlainText
+                                    color: editShortcutButton.foreground
+                                    font.family: editShortcutButton.fontFamily
+                                    font.pixelSize: editShortcutButton.fontSize
+
+                                    TextMetrics {
+                                        id: shortcutGearMetrics
+                                        font: shortcutGear.font
+                                        text: shortcutGear.text
+                                    }
+                                }
+                            }
                         }
                     }
 
                     Item {
                         width: parent.width
-                        implicitHeight: Math.max(singleLayoutHeader.implicitHeight, singleLayoutToggle.implicitHeight)
+                        implicitHeight: Math.max(singleLayoutLabel.implicitHeight, singleLayoutToggle.implicitHeight)
 
-                        PanelSectionHeader {
-                            id: singleLayoutHeader
-                            anchors.left: singleLayoutHeader.parent.left
-                            anchors.verticalCenter: singleLayoutHeader.parent.verticalCenter
+                        Text {
+                            id: singleLayoutLabel
+                            anchors.left: singleLayoutLabel.parent.left
+                            anchors.right: singleLayoutToggle.left
+                            anchors.rightMargin: Style.space(6)
+                            anchors.verticalCenter: singleLayoutLabel.parent.verticalCenter
                             text: "Show with one layout"
-                            foreground: root.showSingleLayout ? root.bar.foreground : Commons.Color.muted
-                            fontFamily: root.bar.fontFamily
+                            elide: Text.ElideRight
+                            color: root.showSingleLayout ? root.bar.foreground : Qt.darker(root.bar.foreground, 1.4)
+                            font.family: root.bar.fontFamily
+                            font.pixelSize: Style.font.bodySmall
                         }
 
                         ToggleSwitch {
                             id: singleLayoutToggle
                             anchors.right: singleLayoutToggle.parent.right
-                            anchors.verticalCenter: singleLayoutHeader.verticalCenter
-                            anchors.verticalCenterOffset: Math.round(singleLayoutHeader.topPadding / 2)
-                            trackHeight: Math.round(singleLayoutHeader.font.pixelSize * 1.2)
+                            anchors.verticalCenter: singleLayoutLabel.verticalCenter
+                            trackHeight: root.compactToggleHeight
                             cursorPad: Style.space(3)
                             checked: root.showSingleLayout
                             foreground: root.bar.foreground
@@ -814,27 +856,26 @@ Panel {
 
                     Item {
                         width: parent.width
-                        implicitHeight: Math.max(perWindowHeader.implicitHeight, perWindowToggle.implicitHeight)
-                        opacity: root.trackerSupportKnown && root.trackerSupported ? 1 : 0.45
+                        implicitHeight: Math.max(perWindowLabel.implicitHeight, perWindowToggle.implicitHeight)
 
-                        PanelSectionHeader {
-                            id: perWindowHeader
-                            anchors.left: perWindowHeader.parent.left
+                        Text {
+                            id: perWindowLabel
+                            anchors.left: perWindowLabel.parent.left
                             anchors.right: perWindowToggle.left
                             anchors.rightMargin: Style.space(6)
-                            anchors.verticalCenter: perWindowHeader.parent.verticalCenter
+                            anchors.verticalCenter: perWindowLabel.parent.verticalCenter
                             text: "Activate per-window layouts"
                             elide: Text.ElideRight
-                            foreground: root.perWindowLayoutsActive ? root.bar.foreground : Commons.Color.muted
-                            fontFamily: root.bar.fontFamily
+                            color: root.perWindowLayoutsActive ? root.bar.foreground : Qt.darker(root.bar.foreground, 2.3)
+                            font.family: root.bar.fontFamily
+                            font.pixelSize: Style.font.bodySmall
                         }
 
                         ToggleSwitch {
                             id: perWindowToggle
                             anchors.right: perWindowToggle.parent.right
-                            anchors.verticalCenter: perWindowHeader.verticalCenter
-                            anchors.verticalCenterOffset: Math.round(perWindowHeader.topPadding / 2)
-                            trackHeight: Math.round(perWindowHeader.font.pixelSize * 1.2)
+                            anchors.verticalCenter: perWindowLabel.verticalCenter
+                            trackHeight: root.compactToggleHeight
                             cursorPad: Style.space(3)
                             enabled: root.trackerSupportKnown && root.trackerSupported
                             checked: root.perWindowLayoutsActive
@@ -855,7 +896,7 @@ Panel {
 
                     Button {
                         id: backButton
-                        width: Style.space(82)
+                        width: implicitWidth + backChevron.implicitWidth + Style.space(4)
                         text: "Back"
                         foreground: root.bar.foreground
                         fontFamily: root.bar.fontFamily
@@ -866,13 +907,14 @@ Panel {
                         onClicked: root.closeSettings()
 
                         Text {
+                            id: backChevron
                             anchors.right: parent.right
                             anchors.rightMargin: backButton.horizontalPadding
                             anchors.verticalCenter: parent.verticalCenter
-                            text: "󰅁"
+                            text: ""
                             color: backButton.foreground
                             font.family: backButton.fontFamily
-                            font.pixelSize: backButton.iconSize
+                            font.pixelSize: backButton.fontSize
                         }
                     }
                 }

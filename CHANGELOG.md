@@ -2,6 +2,14 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## Unreleased
+
+- Fix Qt 6.12 color resolution and QML scope references, contributed by
+  @hamedemamimeybodi in PR #22.
+- Preserve per-window layout changes made through keyd.
+- Ignore laptop hotkey-only devices when tracking layouts.
+- Retry pending shortcut queries after process launch failures.
+
 ## 0.2.3 - 2026-09-21
 
 - Show variants in the bar and picker, such as `US(intl)` and `US(dvorak)`.
