@@ -141,7 +141,7 @@ Panel {
 
     function editKeyboardShortcut() {
         root.close();
-        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "+" + String(root.keyboardOptionsLine), "+normal! zz", root.keyboardConfigPath]);
+        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "-c", String(root.keyboardOptionsLine) + " | normal! zz", root.keyboardConfigPath]);
     }
 
     function typingKeyboards(keyboards) {
