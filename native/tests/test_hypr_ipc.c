@@ -42,6 +42,15 @@ static void test_current_layout_prefers_main_typing_keyboard(void) {
   assert(hypr_json_current_layout(fallback, &layout) == 0);
   assert(layout == 2);
   assert(hypr_json_current_layout("{\"keyboards\":[]}", &layout) == -1);
+
+  const char *laptop =
+      "{\"keyboards\":["
+      "{\"name\":\"asus-wmi-hotkeys\",\"active_layout_index\":1,"
+      "\"main\":true},"
+      "{\"name\":\"at-translated-set-2-keyboard\",\"active_layout_index\":0,"
+      "\"main\":false}]}";
+  assert(hypr_json_current_layout(laptop, &layout) == 0);
+  assert(layout == 0);
 }
 
 static void test_current_layout_prefers_main_keyd_keyboard(void) {
@@ -65,6 +74,9 @@ static void test_typing_keyboard_filter(void) {
   assert(!hypr_keyboard_is_typing("remote-virtual-keyboard"));
   assert(!hypr_keyboard_is_typing("keyboard-system-control"));
   assert(!hypr_keyboard_is_typing("keyboard-consumer-control"));
+  assert(!hypr_keyboard_is_typing("ideapad-extra-buttons"));
+  assert(!hypr_keyboard_is_typing("asus-wmi-hotkeys"));
+  assert(!hypr_keyboard_is_typing("dell-wmi-hotkeys"));
   assert(!hypr_keyboard_is_typing("video-bus"));
   assert(!hypr_keyboard_is_typing("power-button-1"));
   assert(!hypr_keyboard_is_typing(NULL));
