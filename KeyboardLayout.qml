@@ -255,7 +255,6 @@ Panel {
         if (index < 0 || index >= root.layouts.length)
             return;
         root.switchLayouts(String(index));
-        root.close();
     }
 
     function openKeyboardViewer() {

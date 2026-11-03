@@ -371,3 +371,13 @@ test('removing typing devices clears the visible state without deleting aliases'
     w.update(keyboard());
     assert.equal(w.root.layoutLabel, 'English');
 });
+
+test('choosing a layout switches it without closing the main menu', () => {
+    const switches = [];
+    let closes = 0;
+    const root = {layouts:['US','DE'], switchLayouts:value => switches.push(value), close:() => closes++};
+    const select = source.match(/    function selectLayout\(index\) \{[\s\S]*?\n    \}/)[0];
+    vm.runInNewContext(select + '; selectLayout(1); selectLayout(-1); selectLayout(2);', {root});
+    assert.deepEqual(switches, ['1']);
+    assert.equal(closes, 0);
+});
