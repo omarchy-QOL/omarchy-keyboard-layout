@@ -113,8 +113,10 @@ TestCase {
     function test_01_pickerNavigation() {
         picker.resetCursor();
         picker.moveCursor(1);
-        picker.moveCursor(1);
         picker.activateCursor();
+        const selector = findChild(picker, "layoutSelector");
+        tryCompare(selector, "popupOpen", true);
+        selector.select(1);
         equal(selectedLayout, 1);
         picker.moveCursor(1);
         picker.activateCursor();
@@ -125,6 +127,24 @@ TestCase {
         picker.moveCursor(1);
         picker.activateCursor();
         equal(settingsOpened, 1);
+    }
+
+    function test_015_layoutSelectorKeepsIndicesAndHeight() {
+        const selector = findChild(picker, "layoutSelector");
+        const height = picker.implicitHeight;
+        picker.layouts = Array.from({length: 20}, function (_, index) { return "Layout " + index; });
+        equal(picker.implicitHeight, height);
+        picker.layouts = ["Same", "Same"];
+        picker.selectedIndex = 1;
+        selectedLayout = -1;
+        selector.select(1);
+        equal(selectedLayout, 1);
+        mouseClick(selector);
+        tryCompare(selector, "popupOpen", true);
+        mouseClick(selector);
+        tryCompare(selector, "popupOpen", false);
+        picker.layouts = ["US", "DE"];
+        picker.selectedIndex = 0;
     }
 
     function test_02_currentGroupAndLateResults() {

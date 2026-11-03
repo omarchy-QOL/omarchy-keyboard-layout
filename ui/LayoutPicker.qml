@@ -13,16 +13,19 @@ Column {
     required property string fontFamily
     property int cursorPosition: 0
     property bool cursorActive: false
-    readonly property int itemCount: layouts.length + 3
+    readonly property int itemCount: 4
+    readonly property bool keyboardInputActive: layoutDropdown.popupOpen
     spacing: Style.space(6)
 
     signal layoutChosen(int index)
     signal settingsRequested
     signal viewerRequested
     signal emojiRequested
+    signal focusRequested
 
     function resetCursor() {
-        root.cursorPosition = Math.max(0, Math.min(root.selectedIndex, root.itemCount - 1));
+        layoutDropdown.close();
+        root.cursorPosition = 0;
         root.cursorActive = false;
     }
 
@@ -36,11 +39,11 @@ Column {
     function activateCursor() {
         if (!root.cursorActive)
             return;
-        if (root.cursorPosition < root.layouts.length)
-            root.layoutChosen(root.cursorPosition);
-        else if (root.cursorPosition === root.layouts.length)
+        if (root.cursorPosition === 0)
+            layoutDropdown.open();
+        else if (root.cursorPosition === 1)
             root.emojiRequested();
-        else if (root.cursorPosition === root.layouts.length + 1)
+        else if (root.cursorPosition === 2)
             root.viewerRequested();
         else
             root.settingsRequested();
@@ -58,31 +61,19 @@ Column {
     onItemCountChanged: if (root.cursorPosition >= root.itemCount)
                             root.resetCursor()
 
-    Repeater {
-        model: root.layouts
-
-        Button {
-            required property var modelData
-            required property int index
-            width: root.width
-            text: modelData
-            clip: true
-            foreground: root.foreground
-            fontFamily: root.fontFamily
-            fontSize: Style.font.bodySmall
-            leftAlign: true
-            bordered: true
-            selected: root.selectedIndex === index
-            hasCursor: root.cursorActive && root.cursorPosition === index
-            onClicked: root.layoutChosen(index)
-            onHovered: function (hovered) {
-                root.hoverItem(index, hovered);
-            }
-        }
-    }
-
-    PanelSeparator {
+    LayoutDropdown {
+        id: layoutDropdown
+        objectName: "layoutSelector"
+        width: root.width
+        options: root.layouts
+        selectedIndex: root.selectedIndex
+        value: root.layouts[root.selectedIndex] || ""
         foreground: root.foreground
+        fontFamily: root.fontFamily
+        enabled: root.layouts.length > 0
+        hasCursor: root.cursorActive && root.cursorPosition === 0
+        onIndexSelected: function (index) { root.layoutChosen(index); }
+        onPopupOpenChanged: if (!popupOpen) root.focusRequested()
     }
 
     Row {
@@ -102,13 +93,17 @@ Column {
                 fontSize: Style.font.bodySmall
                 leftAlign: true
                 bordered: true
-                hasCursor: root.cursorActive && root.cursorPosition === root.layouts.length + index
+                hasCursor: root.cursorActive && root.cursorPosition === 1 + index
                 onClicked: index === 0 ? root.emojiRequested() : root.viewerRequested()
                 onHovered: function (hovered) {
-                    root.hoverItem(root.layouts.length + index, hovered);
+                    root.hoverItem(1 + index, hovered);
                 }
             }
         }
+    }
+
+    PanelSeparator {
+        foreground: root.foreground
     }
 
     Button {
@@ -120,10 +115,10 @@ Column {
         fontSize: Style.font.bodySmall
         leftAlign: true
         bordered: true
-        hasCursor: root.cursorActive && root.cursorPosition === root.layouts.length + 2
+        hasCursor: root.cursorActive && root.cursorPosition === 3
         onClicked: root.settingsRequested()
         onHovered: function (hovered) {
-            root.hoverItem(root.layouts.length + 2, hovered);
+            root.hoverItem(3, hovered);
         }
 
         Text {

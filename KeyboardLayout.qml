@@ -265,8 +265,10 @@ Panel {
     }
 
     onOpenedChanged: {
-        if (!root.opened)
+        if (!root.opened) {
+            layoutPicker.resetCursor();
             return;
+        }
         root.settingsPage = false;
         layoutPicker.resetCursor();
         root.refresh();
@@ -490,7 +492,7 @@ Panel {
         PanelKeyCatcher {
             id: keyCatcher
             anchors.fill: keyCatcher.parent
-            blocked: root.settingsPage && settingsView.keyboardInputActive
+            blocked: root.settingsPage ? settingsView.keyboardInputActive : layoutPicker.keyboardInputActive
             onMoveRequested: function (dx, dy) {
                 if (!root.settingsPage)
                     layoutPicker.moveCursor(dy !== 0 ? dy : dx);
@@ -524,6 +526,7 @@ Panel {
                         root.selectLayout(index);
                     }
                     onSettingsRequested: root.openSettings()
+                    onFocusRequested: keyCatcher.forceActiveFocus()
                     onViewerRequested: root.openKeyboardViewer()
                     onEmojiRequested: {
                         root.close();

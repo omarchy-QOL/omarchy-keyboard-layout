@@ -8,10 +8,12 @@ DropdownBase {
     id: root
 
     property var options: []
+    property int selectedIndex: -1
+    signal indexSelected(int index)
 
     onTriggerDownPressed: root.open()
     onPopupOpened: {
-        optionList.currentIndex = Math.max(0, root.options.indexOf(root.value));
+        optionList.currentIndex = Math.max(0, root.selectedIndex >= 0 ? root.selectedIndex : root.options.indexOf(root.value));
         optionList.forceActiveFocus();
     }
 
@@ -19,6 +21,7 @@ DropdownBase {
         if (index < 0 || index >= root.options.length)
             return;
         root.changed(String(root.options[index]));
+        root.indexSelected(index);
         root.close();
     }
 
@@ -57,7 +60,7 @@ DropdownBase {
             fontSize: Style.font.body
             leftAlign: true
             focusable: true
-            selected: root.value === optionButton.modelData
+            selected: root.selectedIndex >= 0 ? root.selectedIndex === optionButton.index : root.value === optionButton.modelData
             hasCursor: optionList.currentIndex === optionButton.index
             clip: true
             onClicked: root.select(optionButton.index)

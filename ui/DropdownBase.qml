@@ -18,6 +18,7 @@ Item {
     property string fontFamily: Style.font.family
     property real triggerPadding: Style.space(20)
     property Component triggerDecoration: null
+    property bool hasCursor: false
     property alias contentItem: popup.contentItem
     readonly property bool popupOpen: popup.opened
     readonly property var popupBorderSpec: Border.localOrSurfaceSpec("popups", "border", popupBorder, Commons.Color.popups.border, Style.normalBorderWidth)
@@ -52,6 +53,7 @@ Item {
         leftAlign: true
         rightPadding: horizontalPadding + root.triggerPadding
         bordered: true
+        hasCursor: root.hasCursor
         focusable: true
         clip: true
         onClicked: popup.opened ? popup.close() : popup.open()
