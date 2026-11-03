@@ -2,9 +2,9 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
-## 0.3.0-rc.1 - 2026-11-03
+## 0.2.4 - unreleased
 
-Pre-release on `dev`.
+Prepared on `dev`; release after merging into `main`.
 
 - Add an interactive keyboard viewer with sticky modifiers, dead keys, and
   accent selection.
@@ -12,8 +12,9 @@ Pre-release on `dev`.
   [plasmaStray](https://github.com/plasmaStray) in
   [#21](https://github.com/omarchy-QOL/omarchy-keyboard-layout/pull/21).
 - Add an optional keycap style for the bar label, disabled by default.
-- Place Emoji and View buttons together above Settings and keep both menus the
-  same width. Both mouse buttons open the layout menu.
+- Select layouts from a dropdown that keeps the main menu open after a change.
+- Place Emoji and View together above the separator and Settings. Both menus
+  share a width, and either mouse button opens the layout menu.
 - Keep viewer legends within their keys across layouts and font fallbacks.
 - Fix Qt 6.12 colors, QML scopes, and laptop keyboard tracking, contributed by
   [Haamed](https://github.com/hamedemamimeybodi) in
