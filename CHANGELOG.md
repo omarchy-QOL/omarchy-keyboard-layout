@@ -2,13 +2,25 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
-## Unreleased
+## 0.3.0-rc.1 - 2026-11-03
 
-- Fix Qt 6.12 color resolution and QML scope references, contributed by
-  @hamedemamimeybodi in PR #22.
+Pre-release on `dev`.
+
+- Add an interactive keyboard viewer with sticky modifiers, dead keys, and
+  accent selection.
+- Add custom layout labels, contributed by
+  [plasmaStray](https://github.com/plasmaStray) in
+  [#21](https://github.com/omarchy-QOL/omarchy-keyboard-layout/pull/21).
+- Add an optional keycap style for the bar label, disabled by default.
+- Place Emoji and View buttons together above Settings and keep both menus the
+  same width. Both mouse buttons open the layout menu.
+- Keep viewer legends within their keys across layouts and font fallbacks.
+- Fix Qt 6.12 colors, QML scopes, and laptop keyboard tracking, contributed by
+  [Haamed](https://github.com/hamedemamimeybodi) in
+  [#22](https://github.com/omarchy-QOL/omarchy-keyboard-layout/pull/22).
 - Preserve per-window layout changes made through keyd.
-- Ignore laptop hotkey-only devices when tracking layouts.
-- Retry pending shortcut queries after process launch failures.
+- Retry pending shortcut queries after process launch failures and open the
+  keyboard configuration at the shortcut's owning line.
 
 ## 0.2.3 - 2026-09-21
 

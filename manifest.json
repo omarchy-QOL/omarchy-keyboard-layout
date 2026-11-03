@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "io.github.ilyazar.keyboard-layout",
   "name": "Keyboard Layout Pulse",
-  "version": "0.2.3",
+  "version": "0.3.0-rc.1",
   "author": "ilyaZar",
   "license": "MIT",
-  "description": "Minimalist keyboard layout picker with optional settings that can be toggled on/off: pulsing indicator, per-window layouts and 'keep open for single language choices'.",
+  "description": "Keyboard layout picker with a configurable pulse, custom labels, per-window layouts, and an interactive keyboard viewer.",
   "kinds": ["bar-widget", "service"],
   "entryPoints": {
     "barWidget": "KeyboardLayout.qml",

@@ -2,25 +2,20 @@
 
 ![Keyboard layout menu and settings](preview.png)
 
-A compact keyboard-layout picker for the Omarchy Quattro bar. It shows the
-active XKB layout, opens a native layout menu, and optionally pulses after a
-layout change to improve visual confirmation of the layout change.
-
-## What's new in 0.2.3
-
-- Tell layouts apart with labels like `US` and `US(intl)`.
-- See a pulse when switching between them, including on another keyboard.
+Switch keyboard layouts from the Omarchy Quattro bar, with an optional color
+pulse to make each change easy to spot. Add custom labels or open an on-screen
+keyboard while keeping focus in your application.
 
 ## Requirements
 
-- Omarchy Quattro: >= 4.0.0
-- x86-64 for optional per-window layouts: `C`-compiled binary is shipped
-- `json-c` for optional per-window layout (included in default Omarchy installs)
-- one or more keyboard layouts configured in `~/.config/hypr/input.lua`
+- Omarchy Quattro >= 4.0.0
+- One or more keyboard layouts in `~/.config/hypr/input.lua`
+- x86-64, `json-c`, `libxkbcommon`, and `libutf8proc` for the keyboard viewer
+  and per-window layouts
+- `wtype` for click-to-type input
 
-The optional per-window mode runs a bundled helper through one shell service
-only while it is enabled. It does not install a system service. On other
-architectures its toggle stays disabled; layout selection still works.
+The native helper is bundled for x86-64. Other architectures need a native
+build for the viewer and per-window layouts; layout selection still works.
 
 ## Install
 
@@ -28,70 +23,54 @@ architectures its toggle stays disabled; layout selection still works.
 omarchy plugin add https://github.com/omarchy-QOL/omarchy-keyboard-layout.git --enable
 ```
 
-The plugin replaces Omarchy's built-in `omarchy.keyboard-layout` bar widget.
-Removing or disabling the plugin restores the built-in widget in the same
-position.
+The plugin replaces Omarchy's built-in keyboard widget. Disabling or removing
+it restores the built-in widget in the same position.
 
 ## Use
 
-- Click the layout label to choose a configured language.
-- Scroll over the label to move to the next or previous language.
-- Open **Settings** from the language menu to customize the widget.
-- Set a short bar label for each configured layout under **Bar labels** (for
-  example, `EN` for `RU(ruchey_en)` and `RU` for `RU(ruchey_ru)`). Press Enter
-  to save; leave a field blank to restore its XKB name.
-- Enable **Show with one layout** to keep the widget visible with one layout.
-- Under settings, toggle on/off:
-  - animation (pulsing + colored indicator)
-  - show icon even for one layout enabled (never hide top level language icon)
-  - per-window layout tracing; each hyprland window keeps track of layout
+- Left-click or right-click the bar label to open the layout menu.
+- Select a layout, or scroll over the bar label to cycle through layouts.
+- Choose **Emoji** for Omarchy's emoji picker or **View** for the keyboard
+  viewer.
+- Open **Settings** to customize the widget.
+
+Variants appear in labels such as `US(intl)`. Under **Layout labels**, select a
+layout and enter a custom label. Press Enter or leave the field to save; leave
+it blank to restore the automatic label. Preferences survive restarts.
+
+**Animation** is on by default. Choose a preset pulse color or enter a custom
+six-digit hex color. Turn animation off to switch layouts without a pulse.
+
+Enable **Show with one layout** to keep the widget visible when only one layout
+is configured. **Keycap style** adds a compact background behind the bar label
+and works with the pulse animation; it is off by default.
+
+Enable **Activate per-window layouts** to remember each window's layout.
+Automatic restores do not pulse. Turn it off to use one layout across windows.
+
+To change configured layouts or the switching shortcut, use the gear beside
+the shortcut to open the relevant line in `~/.config/hypr/input.lua`. The plugin
+reads this configuration without rewriting it.
+
+## Keyboard viewer
+
+The viewer follows the active layout and variant. Click keys to type into your
+application without moving keyboard focus away from it.
+
+- Click a modifier once for the next key; double-click to lock it.
+- Hold a letter to choose an accent. Dead keys compose with the next key.
+- Choose Auto, ANSI, ISO, ABNT, or JIS with the shape selector.
+- Drag the top edge to move the viewer or the bottom corner to resize it.
+- Use the close button to dismiss it.
+
+Modifier buttons affect the viewer only. Physical key presses are not
+highlighted.
 
 ## Demo
 
-See layouts change using the bar and keyboard shortcuts, choose a pulse color,
-add languages, and change the switching shortcut from double `Ctrl` to double
-`Alt`.
+See layout switching and pulse colors in action:
 
 <https://github.com/user-attachments/assets/9e631b8e-f155-45d1-9731-567414712d6a>
-
-## Animation and color
-
-Animation is enabled by default. After a layout change, the label pulses using
-the selected color.
-
-Turn **Animation** off for an immediate, plain layout change with no pulse,
-scale effect, or accent color. The color controls become shaded and inactive;
-the selected color remains saved for the next time Animation is enabled.
-
-The color dropdown puts **Custom** first, followed by fixed presets:
-
-- Teal: `#2aa198`
-- Purple: `#a77bd8`
-- Blue: `#3b82f6`
-- Nord yellow: `#ebcb8b`
-
-Custom accepts exactly six-digit hex colors such as `#2aa191`. **Apply** saves
-the color and closes the menu.
-
-## Layouts and keybindings
-
-The plugin reads the effective layouts and `grp:*` switching option directly
-from Hyprland. It translates XKB descriptions into friendly names such as **Both
-Alt keys** and **Super + Space**.
-
-The bar and picker show variants, such as `US(intl)`, and plain `US` otherwise.
-Layout switches pulse even when their labels match.
-
-Use the gear beside the displayed shortcut to open its owning line in
-`~/.config/hypr/input.lua` with `nvim`.
-
-The plugin never rewrites the Hyprland input file. Layout and keybinding changes
-remain owned by Omarchy and Hyprland.
-
-Enable **Activate per-window layouts** to remember the active layout separately
-for each open window. Disabling it stops the bundled helper and returns to one
-layout shared across windows. Automatic restores do not trigger the pulse, so
-the animation continues to identify manual layout changes.
 
 ## Remove
 
@@ -99,9 +78,7 @@ the animation continues to identify manual layout changes.
 omarchy plugin remove io.github.ilyazar.keyboard-layout --yes
 ```
 
-Preferences are stored on the widget's entry in Omarchy's `shell.json`.
-Removing the replacement restores the built-in keyboard widget and retains
-your preferences for reinstalling Keyboard Layout Pulse.
+Preferences are stored in Omarchy's `shell.json` and retained for reinstalling.
 
 ## License
 
