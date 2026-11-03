@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../KeyboardLayout.qml', import.meta.url), 'utf8');
 const functions = source.slice(
-    source.indexOf('    function typingKeyboards('),
+    source.indexOf('    function clearKeyboardState('),
     source.indexOf('    function refresh('),
 );
 const settingsFunctions = source.slice(
@@ -18,6 +18,9 @@ const labelBindings = Object.fromEntries(['maxLayoutLabelLength', 'layoutLabels'
     ))[1];
     return [name, new vm.Script(value.startsWith('{') ? `(function() ${value})()` : `(${value})`)];
 }));
+const deviceSource = readFileSync(new URL('../lib/keyboard/KeyboardDevices.js', import.meta.url), 'utf8');
+const KeyboardDevices = vm.runInNewContext(deviceSource.replace('.pragma library', '')
+    + '; ({typingDevices, selectDevice})');
 const eventHandler = source.match(/        function onRawEvent\(event\) \{[\s\S]*?\n        \}/)[0];
 
 const queryHandler = new vm.Script('(function() ' + source.match(
@@ -27,19 +30,22 @@ const queryHandler = new vm.Script('(function() ' + source.match(
 function widget(settings = {}) {
     const root = {
         settings,
+        close: () => { calls.closes++; },
         layoutKeys: [],
         layoutFull: '',
         setting: (name, fallback) => root.settings[name] ?? fallback,
         bar: { shell: { updateEntryInline: () => { calls.saves++; return true; } } },
         keyboardName: '',
+        configurationRevision: 0,
         layoutConfig: '',
         activeLayoutIndex: -1,
         automaticRestoreLayout: -1,
         animationEnabled: true,
     };
-    const calls = { pulses: 0, resets: 0, timerStops: 0, refreshes: 0, saves: 0 };
+    const calls = { pulses: 0, resets: 0, timerStops: 0, refreshes: 0, saves: 0, closes: 0 };
     const context = vm.createContext({
         root,
+        KeyboardDevices,
         pulseAnimation: { restart: () => calls.pulses++ },
         automaticRestoreTimer: { stop: () => calls.timerStops++ },
         resetPulse: () => calls.resets++,
@@ -50,9 +56,8 @@ function widget(settings = {}) {
     Object.assign(root, {
         storeSettings: context.storeSettings,
         layoutDisplayName: context.layoutDisplayName,
-        typingKeyboards: context.typingKeyboards,
-        selectKeyboard: context.selectKeyboard,
         updateKeyboards: context.updateKeyboards,
+        clearKeyboardState: context.clearKeyboardState,
         refresh: () => calls.refreshes++,
     });
     for (const [name, binding] of Object.entries(labelBindings))
@@ -352,4 +357,17 @@ test('invalid keyboard query hides the label and a later query recovers', () => 
     w.query(JSON.stringify({keyboards:[keyboard()]}));
     assert.equal(w.root.layoutLabel, 'English');
     assert.equal(w.calls.pulses, 0);
+});
+
+test('removing typing devices clears the visible state without deleting aliases', () => {
+    const w = widget({layoutLabels:{US:'English'}});
+    w.update(keyboard());
+    w.update();
+    assert.equal(w.root.layoutLabel, '');
+    assert.equal(w.root.keyboardDetails, null);
+    assert.equal(w.labels().length, 0);
+    assert.equal(w.calls.closes, 1);
+    assert.equal(w.root.settings.layoutLabels.US, 'English');
+    w.update(keyboard());
+    assert.equal(w.root.layoutLabel, 'English');
 });

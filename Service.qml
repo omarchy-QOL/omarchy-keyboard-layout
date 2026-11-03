@@ -7,8 +7,9 @@ import Quickshell.Io
 Item {
     id: root
 
-    readonly property string pluginPath: Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.ilyazar.keyboard-layout"
-    readonly property string trackerPath: pluginPath + "/native/keyboard-layoutd"
+    readonly property string pluginPath: Quickshell.env("HOME")
+                                         + "/.config/omarchy/plugins/io.github.ilyazar.keyboard-layout"
+    readonly property string helperPath: pluginPath + "/native/keyboard-layoutd"
 
     property bool trackingEnabled: false
     property bool supportKnown: false
@@ -34,8 +35,17 @@ Item {
     }
 
     function updateSupport(raw) {
+        let supported = false;
+        try {
+            const capabilities = JSON.parse(raw);
+            supported = capabilities.schemaVersion === 1 && capabilities.keymap === true && capabilities.tracking
+                    === true;
+        } catch (error) {
+            supported = false;
+        }
+        supportDeadline.stop();
         root.supportKnown = true;
-        root.supported = String(raw || "").trim() === "x86_64";
+        root.supported = supported;
         root.syncTracker();
     }
 
@@ -45,20 +55,37 @@ Item {
             root.restoreRequested(Number(match[1]));
     }
 
-    Component.onCompleted: architectureProcess.running = true
+    Component.onCompleted: {
+        supportDeadline.start();
+        supportProcess.running = true;
+    }
 
     Process {
-        id: architectureProcess
-        command: ["uname", "-m"]
+        id: supportProcess
+        command: [root.helperPath, "--probe"]
+        clearEnvironment: true
         stdout: StdioCollector {
             waitForEnd: true
-            onStreamFinished: root?.updateSupport(text)
+            onStreamFinished: root.updateSupport(text)
+        }
+        onExited: function (exitCode) {
+            if (exitCode !== 0)
+                root.updateSupport("");
+        }
+    }
+
+    Timer {
+        id: supportDeadline
+        interval: 3000
+        onTriggered: {
+            supportProcess.signal(9);
+            root.updateSupport("");
         }
     }
 
     Process {
         id: layoutTracker
-        command: ["setpriv", "--pdeathsig", "TERM", root.trackerPath]
+        command: ["setpriv", "--pdeathsig", "TERM", root.helperPath]
         stdout: SplitParser {
             onRead: function (line) {
                 root?.parseRestore(line);

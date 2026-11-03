@@ -14,6 +14,7 @@ Column {
     required property string pulseColor
     required property bool animationEnabled
     required property bool showSingleLayout
+    property bool keycapStyle: false
     required property bool perWindowLayoutsActive
     required property bool trackerSupportKnown
     required property bool trackerSupported
@@ -34,6 +35,7 @@ Column {
     signal pulseColorSelected(string value)
     signal animationRequested(bool enabled)
     signal singleLayoutRequested(bool enabled)
+    signal keycapStyleRequested(bool enabled)
     signal perWindowLayoutsRequested(bool enabled)
     signal shortcutEditRequested()
     signal layoutLabelEdited(string key, string value)
@@ -334,9 +336,38 @@ Column {
 
             PanelToolTip {
                 visible: perWindowToggle.containsMouse
-                text: root.trackerSupported ? (root.perWindowLayoutsActive ? "Use one layout across all windows" : "Remember the layout used in each window") : "Per-window layouts require x86-64"
+                text: root.trackerSupported ? (root.perWindowLayoutsActive ? "Use one layout across all windows" : "Remember the layout used in each window") : "Per-window layouts are unavailable on this system"
                 fontFamily: root.fontFamily
             }
+        }
+    }
+
+    Item {
+        width: parent.width
+        implicitHeight: Math.max(keycapLabel.implicitHeight, keycapToggle.implicitHeight)
+
+        Text {
+            id: keycapLabel
+            anchors.left: parent.left
+            anchors.right: keycapToggle.left
+            anchors.rightMargin: Style.space(6)
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Keycap style"
+            elide: Text.ElideRight
+            color: root.keycapStyle ? root.foreground : Qt.darker(root.foreground, 2.3)
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+        }
+
+        ToggleSwitch {
+            id: keycapToggle
+            anchors.right: parent.right
+            anchors.verticalCenter: keycapLabel.verticalCenter
+            trackHeight: root.compactToggleHeight
+            cursorPad: Style.space(3)
+            checked: root.keycapStyle
+            foreground: root.foreground
+            onToggled: root.keycapStyleRequested(!keycapToggle.checked)
         }
     }
 

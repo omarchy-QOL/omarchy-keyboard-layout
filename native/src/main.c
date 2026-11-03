@@ -1,4 +1,5 @@
 #include "keyboard_layout/hypr_ipc.h"
+#include "keyboard_layout/keymap.h"
 #include "keyboard_layout/layout_memory.h"
 
 #include <errno.h>
@@ -123,7 +124,17 @@ static void reconnect_delay(void) {
   }
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+  if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
+    puts("{\"schemaVersion\":1,\"keymap\":true,\"tracking\":true}");
+    return EXIT_SUCCESS;
+  }
+  if (argc == 2 && strcmp(argv[1], "--describe-keymap") == 0)
+    return keymap_describe(stdin, stdout);
+  if (argc != 1) {
+    fprintf(stderr, "usage: keyboard-layoutd [--probe | --describe-keymap]\n");
+    return EXIT_FAILURE;
+  }
   struct sigaction action = {.sa_handler = request_stop};
   sigemptyset(&action.sa_mask);
   sigaction(SIGINT, &action, NULL);

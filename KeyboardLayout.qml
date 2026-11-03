@@ -10,6 +10,8 @@ import qs.Ui
 import "lib/shortcuts" as Shortcuts
 import "lib/PulseColor.js" as PulseColor
 import "ui" as LocalUi
+import "ui/keyboard" as KeyboardUi
+import "lib/keyboard/KeyboardDevices.js" as KeyboardDevices
 
 Panel {
     id: root
@@ -20,6 +22,7 @@ Panel {
     readonly property string pulseColor: PulseColor.normalizedPulseColor(setting("pulseColor", PulseColor.tealColor))
     readonly property bool animationEnabled: setting("animation", true) !== false
     readonly property bool showSingleLayout: setting("showSingleLayout", false) === true
+    readonly property bool keycapStyle: setting("keycapStyle", false) === true
     readonly property bool perWindowLayouts: setting("perWindowLayouts", false) === true
     readonly property bool trackerSupportKnown: trackerService ? trackerService.supportKnown : false
     readonly property bool trackerSupported: trackerService ? trackerService.supported : false
@@ -28,6 +31,8 @@ Panel {
     property bool settingsPage: false
     property int keyboardOptionsLine: 1
 
+    property var keyboardDetails: null
+    property int configurationRevision: 0
     property string keyboardName: ""
     property var keyboardNames: []
     property string layoutConfig: ""
@@ -41,8 +46,6 @@ Panel {
         return root.layoutDisplayName(key);
     })
     property int activeLayoutIndex: -1
-    property int cursorIndex: 0
-    property bool cursorActive: false
     property string layoutFull: ""
     readonly property string layoutLabel: root.layouts[root.activeLayoutIndex] || root.layoutFull
     property bool multipleLayouts: true
@@ -69,10 +72,10 @@ Panel {
     }
 
     function validLayoutLabel(value) {
-        // Reject broken surrogate pairs while allowing supplementary glyphs.
-        return typeof value === "string" && value.length <= root.maxLayoutLabelLength
-            && !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(value)
-            && !/[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(value);
+        // reject broken surrogate pairs while allowing supplementary glyphs
+        return typeof value === "string" && value.length <= root.maxLayoutLabelLength && !
+                /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(value) && !
+                /[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(value);
     }
 
     function layoutDisplayName(key) {
@@ -90,7 +93,9 @@ Panel {
         else
             delete aliases[key];
         if (JSON.stringify(aliases) !== JSON.stringify(root.layoutLabels))
-            persistSettings({ layoutLabels: aliases });
+            persistSettings({
+                                layoutLabels: aliases
+                            });
     }
 
     function setPulseColor(value) {
@@ -98,8 +103,8 @@ Panel {
             return;
         var color = PulseColor.normalizedPulseColor(value);
         persistSettings({
-            pulseColor: color
-        });
+                            pulseColor: color
+                        });
     }
 
     function resetPulse() {
@@ -110,24 +115,24 @@ Panel {
 
     function setAnimationEnabled(enabled) {
         persistSettings({
-            animation: enabled
-        });
+                            animation: enabled
+                        });
         if (!enabled)
             resetPulse();
     }
 
     function setShowSingleLayout(enabled) {
         persistSettings({
-            showSingleLayout: enabled
-        });
+                            showSingleLayout: enabled
+                        });
         if (!enabled && !root.multipleLayouts)
             root.close();
     }
 
     function setPerWindowLayouts(enabled) {
         persistSettings({
-            perWindowLayouts: enabled
-        });
+                            perWindowLayouts: enabled
+                        });
         syncLayoutTracker();
     }
 
@@ -174,35 +179,27 @@ Panel {
 
     function editKeyboardShortcut() {
         root.close();
-        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "-c", String(root.keyboardOptionsLine) + " | normal! zz", root.keyboardConfigPath]);
+        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "-c", String(root.keyboardOptionsLine)
+                                 + " | normal! zz", root.keyboardConfigPath]);
     }
 
-    function typingKeyboards(keyboards) {
-        var physical = keyboards.filter(function (keyboard) {
-            var name = String(keyboard.name);
-            return name === "keyd-virtual-keyboard" || !name.includes("virtual-keyboard");
-        });
-        var typing = physical.filter(function (keyboard) {
-            var name = String(keyboard.name);
-            // Hotkey-only devices do not follow layout group switches.
-            return !name.endsWith("-system-control") && !name.endsWith("-consumer-control") && name !== "video-bus" && !name.startsWith("power-button") && !name.endsWith("-extra-buttons") && !name.endsWith("-wmi-hotkeys");
-        });
-        return typing.length > 0 ? typing : physical;
-    }
-
-    function selectKeyboard(keyboards) {
-        var typing = root.typingKeyboards(keyboards);
-        return typing.find(function (keyboard) {
-            return keyboard.name === root.keyboardName;
-        }) || typing.find(function (keyboard) {
-            return keyboard.main;
-        }) || typing[0];
+    function clearKeyboardState() {
+        root.keyboardDetails = null;
+        root.layoutConfig = "";
+        root.layoutKeys = [];
+        root.activeLayoutIndex = -1;
+        root.layoutFull = "";
+        root.multipleLayouts = false;
+        resetPulse();
+        root.close();
     }
 
     function updateKeyboards(keyboards) {
-        var keyboard = root.selectKeyboard(keyboards);
-        if (!keyboard || !keyboard.active_keymap)
+        const keyboard = KeyboardDevices.selectDevice(keyboards, root.keyboardName);
+        if (!keyboard || !keyboard.active_keymap) {
+            root.clearKeyboardState();
             return;
+        }
         var nextLayouts = keyboard.layout ? String(keyboard.layout).split(",") : [];
         var variants = String(keyboard.variant || "").split(",");
         var index = Number(keyboard.active_layout_index || 0);
@@ -211,8 +208,9 @@ Panel {
         var changed = sameConfig && root.activeLayoutIndex >= 0 && root.activeLayoutIndex !== index;
         var automatic = root.automaticRestoreLayout === index;
 
+        root.keyboardDetails = keyboard;
         root.keyboardName = String(keyboard.name || "");
-        root.keyboardNames = root.typingKeyboards(keyboards).map(function (item) {
+        root.keyboardNames = KeyboardDevices.typingDevices(keyboards).map(function (item) {
             return String(item.name || "");
         }).filter(Boolean);
         root.layoutConfig = config;
@@ -260,36 +258,23 @@ Panel {
         root.close();
     }
 
-    function moveCursor(delta) {
-        var itemCount = root.layouts.length + 1;
-        if (!root.cursorActive) {
-            root.cursorActive = true;
-            return;
-        }
-        root.cursorIndex = (root.cursorIndex + delta + itemCount) % itemCount;
-    }
-
-    function activateCursor() {
-        if (!root.cursorActive)
-            return;
-        if (root.cursorIndex === root.layouts.length)
-            root.openSettings();
-        else
-            root.selectLayout(root.cursorIndex);
+    function openKeyboardViewer() {
+        root.refresh();
+        root.close();
+        keyboardViewer.open(button.QsWindow.window ? button.QsWindow.window.screen : null);
     }
 
     onOpenedChanged: {
         if (!root.opened)
             return;
         root.settingsPage = false;
-        root.cursorIndex = root.activeLayoutIndex;
-        root.cursorActive = false;
+        layoutPicker.resetCursor();
         root.refresh();
         layoutShortcut.refresh();
     }
 
     onAnimationEnabledChanged: if (!animationEnabled)
-        resetPulse()
+                                   resetPulse()
     onPerWindowLayoutsChanged: syncLayoutTracker()
     onTrackerServiceChanged: syncLayoutTracker()
     Component.onCompleted: refresh()
@@ -308,8 +293,11 @@ Panel {
                 let device = String(event.data || "").split(",")[0];
                 if (device && !device.startsWith("hl-virtual-keyboard"))
                     root.keyboardName = device;
-            } else if (name !== "configreloaded")
+            } else if (name === "configreloaded") {
+                root.configurationRevision++;
+            } else {
                 return;
+            }
             root.refresh();
         }
     }
@@ -325,17 +313,23 @@ Panel {
     Process {
         id: queryProcess
         command: ["hyprctl", "-j", "devices"]
+        onRunningChanged: queryDeadline.running = running
         stdout: StdioCollector {
             waitForEnd: true
             onStreamFinished: {
                 try {
                     root.updateKeyboards(JSON.parse(text || "{}").keyboards || []);
                 } catch (error) {
-                    root.activeLayoutIndex = -1;
-                    root.layoutFull = "";
+                    root.clearKeyboardState();
                 }
             }
         }
+    }
+
+    Timer {
+        id: queryDeadline
+        interval: 3000
+        onTriggered: queryProcess.signal(9)
     }
 
     FileView {
@@ -413,11 +407,13 @@ Panel {
         text: ""
         hasVisualContent: root.layoutLabel !== ""
         labelVisible: false
-        fixedWidth: Math.min(Style.space(160), Math.max(12, labelProbe.implicitWidth + Style.space(12)))
+        fixedWidth: Math.min(Style.space(160), root.keycapStyle
+            ? Math.max(keycap.height, labelProbe.implicitWidth + keycap.height * 0.4) + Style.space(12)
+            : Math.max(12, labelProbe.implicitWidth + Style.space(12)))
         horizontalMargin: 6
         tooltipText: root.layoutFull
         onPressed: function (mouseButton) {
-            if (mouseButton === Qt.LeftButton)
+            if (mouseButton === Qt.LeftButton || mouseButton === Qt.RightButton)
                 root.toggle();
         }
         onWheelMoved: function (delta) {
@@ -431,7 +427,26 @@ Panel {
         visible: false
         text: root.layoutLabel
         font.family: button.fontFamily
-        font.pixelSize: Style.font.caption
+        font.pixelSize: root.keycapStyle ? Math.round(keycap.height * (root.layoutLabel.length > 1 ? 0.6 : 0.72))
+            : Style.font.caption
+        font.bold: root.keycapStyle
+    }
+
+    Rectangle {
+        id: keycap
+        visible: root.keycapStyle
+        anchors.centerIn: button
+        width: Math.max(0, button.width - Style.space(12))
+        height: Style.space(15)
+        radius: Math.max(Math.round(height * 0.2), Math.min(Style.cornerRadius, height * 0.3))
+        color: root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
+        opacity: root.pulseOpacity
+        scale: root.pulseScale
+        readonly property real luminance: 0.299 * color.r + 0.587 * color.g + 0.114 * color.b
+
+        Behavior on color {
+            ColorAnimation { duration: 160 }
+        }
     }
 
     Text {
@@ -443,13 +458,14 @@ Panel {
         maximumLineCount: 1
         anchors.centerIn: button
         text: root.layoutLabel
-        color: root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
+        color: root.keycapStyle ? (keycap.luminance > 0.55 ? "#20242b" : "#f5f5f5")
+            : root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
         opacity: root.pulseOpacity
         scale: root.pulseScale
         transformOrigin: Item.Center
         font.family: button.fontFamily
-        font.pixelSize: Style.font.caption
-        font.bold: root.animationEnabled && pulseAnimation.running
+        font.pixelSize: labelProbe.font.pixelSize
+        font.bold: root.keycapStyle || (root.animationEnabled && pulseAnimation.running)
         renderType: Text.NativeRendering
         layer.enabled: root.animationEnabled && pulseAnimation.running
         layer.smooth: true
@@ -468,7 +484,7 @@ Panel {
         bar: root.bar
         open: root.opened
         focusTarget: keyCatcher
-        contentWidth: panel.fittedContentWidth(root.settingsPage ? Style.space(260) : (panelColumn.implicitHeight > 0 ? panel.contentHeight : Style.space(180)))
+        contentWidth: panel.fittedContentWidth(Style.space(260))
         contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight)
 
         PanelKeyCatcher {
@@ -477,9 +493,10 @@ Panel {
             blocked: root.settingsPage && settingsView.keyboardInputActive
             onMoveRequested: function (dx, dy) {
                 if (!root.settingsPage)
-                    root.moveCursor(dy !== 0 ? dy : dx);
+                    layoutPicker.moveCursor(dy !== 0 ? dy : dx);
             }
-            onActivateRequested: root.activateCursor()
+            onActivateRequested: if (!root.settingsPage)
+                                     layoutPicker.activateCursor()
             onCloseRequested: {
                 if (root.settingsPage)
                     root.closeSettings();
@@ -495,69 +512,22 @@ Panel {
                 width: parent.width
                 spacing: Style.space(6)
 
-                Column {
-                    id: layoutColumn
+                LocalUi.LayoutPicker {
+                    id: layoutPicker
                     visible: !root.settingsPage
                     width: parent.width
-                    spacing: Style.space(6)
-
-                    Repeater {
-                        model: root.layouts
-
-                        Button {
-                            required property var modelData
-                            required property int index
-                            width: layoutColumn.width
-                            text: modelData
-                            clip: true
-                            foreground: root.bar.foreground
-                            fontFamily: root.bar.fontFamily
-                            fontSize: Style.font.bodySmall
-                            leftAlign: true
-                            bordered: true
-                            selected: root.activeLayoutIndex === index
-                            hasCursor: root.cursorActive && root.cursorIndex === index
-                            onClicked: root.selectLayout(index)
-                            onHovered: function (hovered) {
-                                if (!hovered)
-                                    return;
-                                root.cursorActive = true;
-                                root.cursorIndex = index;
-                            }
-                        }
+                    layouts: root.layouts
+                    selectedIndex: root.activeLayoutIndex
+                    foreground: root.bar.foreground
+                    fontFamily: root.bar.fontFamily
+                    onLayoutChosen: function (index) {
+                        root.selectLayout(index);
                     }
-
-                    PanelSeparator {
-                        foreground: root.bar.foreground
-                    }
-
-                    Button {
-                        id: settingsButton
-                        width: layoutColumn.width
-                        text: "Settings"
-                        foreground: root.bar.foreground
-                        fontFamily: root.bar.fontFamily
-                        fontSize: Style.font.bodySmall
-                        leftAlign: true
-                        bordered: true
-                        hasCursor: root.cursorActive && root.cursorIndex === root.layouts.length
-                        onClicked: root.openSettings()
-                        onHovered: function (hovered) {
-                            if (!hovered)
-                                return;
-                            root.cursorActive = true;
-                            root.cursorIndex = root.layouts.length;
-                        }
-
-                        Text {
-                            anchors.right: parent.right
-                            anchors.rightMargin: settingsButton.horizontalPadding
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: ""
-                            color: settingsButton.foreground
-                            font.family: settingsButton.fontFamily
-                            font.pixelSize: settingsButton.fontSize
-                        }
+                    onSettingsRequested: root.openSettings()
+                    onViewerRequested: root.openKeyboardViewer()
+                    onEmojiRequested: {
+                        root.close();
+                        root.bar.run("omarchy-shell shell toggle omarchy.emojis");
                     }
                 }
 
@@ -571,6 +541,7 @@ Panel {
                     pulseColor: root.pulseColor
                     animationEnabled: root.animationEnabled
                     showSingleLayout: root.showSingleLayout
+                    keycapStyle: root.keycapStyle
                     perWindowLayoutsActive: root.perWindowLayoutsActive
                     trackerSupportKnown: root.trackerSupportKnown
                     trackerSupported: root.trackerSupported
@@ -590,6 +561,9 @@ Panel {
                     onSingleLayoutRequested: function (enabled) {
                         root.setShowSingleLayout(enabled);
                     }
+                    onKeycapStyleRequested: function (enabled) {
+                        root.persistSettings({ keycapStyle: enabled });
+                    }
                     onPerWindowLayoutsRequested: function (enabled) {
                         root.setPerWindowLayouts(enabled);
                     }
@@ -600,5 +574,21 @@ Panel {
                 }
             }
         }
+    }
+
+    KeyboardUi.KeyboardViewer {
+        id: keyboardViewer
+        keyboard: root.keyboardDetails
+        helperPath: root.trackerService ? root.trackerService.helperPath : ""
+        nativeSupported: root.trackerService ? !root.trackerService.supportKnown || root.trackerService.supported : true
+        fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+        keyboardShape: root.setting("keyboardShape", "auto")
+        configurationRevision: root.configurationRevision
+        onShapeSelected: function (shape) {
+            root.persistSettings({
+                                     keyboardShape: shape
+                                 });
+        }
+        onRefreshRequested: root.refresh()
     }
 }
