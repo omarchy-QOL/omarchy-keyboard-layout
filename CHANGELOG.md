@@ -2,9 +2,7 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
-## 0.2.4 - unreleased
-
-Prepared on `dev`; release after merging into `main`.
+## 0.2.4 - 2026-11-03
 
 - Add an interactive keyboard viewer with sticky modifiers, dead keys, and
   accent selection.
