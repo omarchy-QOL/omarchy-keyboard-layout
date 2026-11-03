@@ -31,13 +31,20 @@ Panel {
     property string keyboardName: ""
     property var keyboardNames: []
     property string layoutConfig: ""
-    property var layouts: []
     property var layoutKeys: []
+    readonly property int maxLayoutLabelLength: 256
+    readonly property var layoutLabels: {
+        const labels = root.setting("layoutLabels", {});
+        return labels && typeof labels === "object" && !Array.isArray(labels) ? labels : {};
+    }
+    readonly property var layouts: root.layoutKeys.map(function (key) {
+        return root.layoutDisplayName(key);
+    })
     property int activeLayoutIndex: -1
     property int cursorIndex: 0
     property bool cursorActive: false
     property string layoutFull: ""
-    property string layoutLabel: ""
+    readonly property string layoutLabel: root.layouts[root.activeLayoutIndex] || root.layoutFull
     property bool multipleLayouts: true
     property real pulseOpacity: 1
     property real pulseScale: 1
@@ -61,34 +68,29 @@ Panel {
         return root.storeSettings(next);
     }
 
-    function layoutDisplayName(layout, variant) {
-        var key = layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
-        var aliases = setting("layoutLabels", {});
-        var alias = aliases && typeof aliases === "object" ? String(aliases[key] || "").trim() : "";
-        return alias || key;
+    function validLayoutLabel(value) {
+        // Reject broken surrogate pairs while allowing supplementary glyphs.
+        return typeof value === "string" && value.length <= root.maxLayoutLabelLength
+            && !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(value)
+            && !/[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(value);
     }
 
-    function setLayoutDisplayName(index, value) {
-        if (index < 0 || index >= root.layoutKeys.length)
+    function layoutDisplayName(key) {
+        const alias = root.layoutLabels[key];
+        return validLayoutLabel(alias) && alias.trim() ? alias.trim() : key;
+    }
+
+    function setLayoutDisplayName(key, value) {
+        if (!root.layoutKeys.includes(key) || !validLayoutLabel(value))
             return;
-        var aliases = {};
-        var current = setting("layoutLabels", {});
-        if (current && typeof current === "object")
-            for (var key in current)
-                aliases[key] = current[key];
-        var name = String(value || "").trim();
-        var layoutKey = root.layoutKeys[index];
-        if (name)
-            aliases[layoutKey] = name;
+        const aliases = Object.assign({}, root.layoutLabels);
+        const name = value.trim();
+        if (name && name !== key)
+            aliases[key] = name;
         else
-            delete aliases[layoutKey];
-        if (!persistSettings({ layoutLabels: aliases }))
-            return;
-        var nextLayouts = root.layouts.slice();
-        nextLayouts[index] = name || layoutKey;
-        root.layouts = nextLayouts;
-        if (root.activeLayoutIndex === index)
-            root.layoutLabel = nextLayouts[index];
+            delete aliases[key];
+        if (JSON.stringify(aliases) !== JSON.stringify(root.layoutLabels))
+            persistSettings({ layoutLabels: aliases });
     }
 
     function setPulseColor(value) {
@@ -214,16 +216,14 @@ Panel {
             return String(item.name || "");
         }).filter(Boolean);
         root.layoutConfig = config;
-        root.layoutKeys = nextLayouts.map(function (layout, i) {
-            var variant = String(variants[i] || "").trim();
-            return layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
-        });
-        root.layouts = nextLayouts.map(function (layout, i) {
-            return root.layoutDisplayName(layout, String(variants[i] || "").trim());
-        });
+        if (!sameConfig) {
+            root.layoutKeys = nextLayouts.map(function (layout, i) {
+                const variant = String(variants[i] || "").trim();
+                return layout.trim().toUpperCase() + (variant ? "(" + variant + ")" : "");
+            });
+        }
         root.activeLayoutIndex = index;
         root.layoutFull = String(keyboard.active_keymap);
-        root.layoutLabel = root.layouts[index] || root.layoutFull;
         root.multipleLayouts = nextLayouts.length > 1;
         if (!sameConfig || automatic) {
             automaticRestoreTimer.stop();
@@ -331,7 +331,8 @@ Panel {
                 try {
                     root.updateKeyboards(JSON.parse(text || "{}").keyboards || []);
                 } catch (error) {
-                    root.layoutLabel = "";
+                    root.activeLayoutIndex = -1;
+                    root.layoutFull = "";
                 }
             }
         }
@@ -412,7 +413,7 @@ Panel {
         text: ""
         hasVisualContent: root.layoutLabel !== ""
         labelVisible: false
-        fixedWidth: Math.max(12, labelProbe.implicitWidth + Style.space(12))
+        fixedWidth: Math.min(Style.space(160), Math.max(12, labelProbe.implicitWidth + Style.space(12)))
         horizontalMargin: 6
         tooltipText: root.layoutFull
         onPressed: function (mouseButton) {
@@ -426,6 +427,7 @@ Panel {
 
     Text {
         id: labelProbe
+        textFormat: Text.PlainText
         visible: false
         text: root.layoutLabel
         font.family: button.fontFamily
@@ -434,6 +436,11 @@ Panel {
 
     Text {
         id: pulseLabel
+        textFormat: Text.PlainText
+        width: Math.max(0, button.width - Style.space(12))
+        horizontalAlignment: Text.AlignHCenter
+        elide: Text.ElideRight
+        maximumLineCount: 1
         anchors.centerIn: button
         text: root.layoutLabel
         color: root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
@@ -502,6 +509,7 @@ Panel {
                             required property int index
                             width: layoutColumn.width
                             text: modelData
+                            clip: true
                             foreground: root.bar.foreground
                             fontFamily: root.bar.fontFamily
                             fontSize: Style.font.bodySmall
@@ -568,9 +576,10 @@ Panel {
                     trackerSupported: root.trackerSupported
                     shortcutLabel: layoutShortcut.label
                     layoutKeys: root.layoutKeys
-                    layoutLabels: root.setting("layoutLabels", {})
-                    onLayoutLabelEdited: function (index, value) {
-                        root.setLayoutDisplayName(index, value);
+                    layoutLabels: root.layoutLabels
+                    maxLayoutLabelLength: root.maxLayoutLabelLength
+                    onLayoutLabelEdited: function (key, value) {
+                        root.setLayoutDisplayName(key, value);
                     }
                     onPulseColorSelected: function (value) {
                         root.setPulseColor(value);

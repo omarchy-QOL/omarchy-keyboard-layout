@@ -20,21 +20,33 @@ Column {
     required property string shortcutLabel
     required property var layoutKeys
     required property var layoutLabels
-    readonly property bool keyboardInputActive: colorDropdown.popupOpen || layoutLabelEditor.activeFocus || (customColorEditorVisible && customColorField.activeFocus)
+    required property int maxLayoutLabelLength
+    readonly property bool keyboardInputActive: colorDropdown.popupOpen || layoutDropdown.popupOpen || layoutLabelEditor.activeFocus || (customColorEditorVisible && customColorField.activeFocus)
     readonly property int compactToggleHeight: Math.round(Style.font.caption * 1.2)
     property bool customColorEditorVisible: false
+    property string selectedLayoutKey: ""
+
+    onLayoutKeysChanged: {
+        if (!root.layoutKeys.includes(root.selectedLayoutKey))
+            root.selectedLayoutKey = root.layoutKeys[0] || "";
+    }
 
     signal pulseColorSelected(string value)
     signal animationRequested(bool enabled)
     signal singleLayoutRequested(bool enabled)
     signal perWindowLayoutsRequested(bool enabled)
     signal shortcutEditRequested()
-    signal layoutLabelEdited(int index, string value)
+    signal layoutLabelEdited(string key, string value)
     signal backRequested()
     signal closeRequested()
     signal focusRequested()
 
     spacing: Style.space(8)
+
+    function labelForLayout(key) {
+        const label = root.layoutLabels[key];
+        return typeof label === "string" && label.length <= root.maxLayoutLabelLength ? label : "";
+    }
 
     function beginEditing() {
         customColorField.text = root.pulseColor;
@@ -200,66 +212,6 @@ Column {
         fontSize: Style.font.bodySmall
     }
 
-    FocusScope {
-        id: layoutLabelEditor
-        width: parent.width
-        implicitHeight: layoutAliasColumn.implicitHeight
-
-        Column {
-            id: layoutAliasColumn
-            width: parent.width
-            spacing: Style.space(6)
-
-            Text {
-                width: parent.width
-                text: "Bar labels (leave blank to use the XKB name)"
-                color: Qt.darker(root.foreground, 1.4)
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                wrapMode: Text.WordWrap
-            }
-
-            Repeater {
-                id: layoutAliasFields
-                    model: root.layoutKeys
-
-                Row {
-                    required property var modelData
-                    required property int index
-                    width: root.width
-                    spacing: Style.space(6)
-
-                    Text {
-                        width: parent.width - layoutAliasField.width - parent.spacing
-                        height: layoutAliasField.implicitHeight
-                        text: modelData
-                        color: root.foreground
-                        font.family: root.fontFamily
-                        font.pixelSize: Style.font.bodySmall
-                        elide: Text.ElideRight
-                        verticalAlignment: Text.AlignVCenter
-                    }
-
-                    TextField {
-                        id: layoutAliasField
-                        width: Style.space(70)
-                        placeholderText: "Auto"
-                        text: {
-                            var aliases = root.layoutLabels;
-                            return aliases && typeof aliases === "object" ? String(aliases[modelData] || "") : "";
-                        }
-                        foreground: root.foreground
-                        font.family: root.fontFamily
-                        onEditingFinished: {
-                            root.layoutLabelEdited(index, text);
-                        }
-                        Keys.onEscapePressed: root.backRequested()
-                    }
-                }
-            }
-        }
-    }
-
     Item {
         width: parent.width
         implicitHeight: Math.max(shortcutText.implicitHeight, shortcutControl.implicitHeight)
@@ -329,7 +281,7 @@ Column {
             anchors.verticalCenter: singleLayoutLabel.parent.verticalCenter
             text: "Show with one layout"
             elide: Text.ElideRight
-            color: root.showSingleLayout ? root.foreground : Qt.darker(root.foreground, 1.4)
+            color: root.showSingleLayout ? root.foreground : Qt.darker(root.foreground, 2.3)
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
         }
@@ -384,6 +336,80 @@ Column {
                 visible: perWindowToggle.containsMouse
                 text: root.trackerSupported ? (root.perWindowLayoutsActive ? "Use one layout across all windows" : "Remember the layout used in each window") : "Per-window layouts require x86-64"
                 fontFamily: root.fontFamily
+            }
+        }
+    }
+
+    PanelSeparator {
+        foreground: root.foreground
+    }
+
+    PanelSectionHeader {
+        text: "Layout labels"
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        fontSize: Style.font.bodySmall
+    }
+
+    FocusScope {
+        id: layoutLabelEditor
+        width: parent.width
+        implicitHeight: layoutAliasColumn.implicitHeight
+        Keys.onEscapePressed: root.backRequested()
+
+        Column {
+            id: layoutAliasColumn
+            width: parent.width
+            spacing: Style.space(6)
+
+            Text {
+                width: parent.width
+                text: "Leave blank to use the XKB name."
+                color: Qt.darker(root.foreground, 1.4)
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.caption
+                wrapMode: Text.WordWrap
+            }
+
+            Row {
+                width: parent.width
+                spacing: Style.space(6)
+
+                LayoutDropdown {
+                    id: layoutDropdown
+                    width: Math.round((parent.width - parent.spacing) / 2)
+                    options: root.layoutKeys
+                    value: root.selectedLayoutKey
+                    enabled: root.layoutKeys.length > 0
+                    foreground: root.foreground
+                    fontFamily: root.fontFamily
+                    onChanged: function (key) {
+                        if (key !== root.selectedLayoutKey) {
+                            root.layoutLabelEdited(root.selectedLayoutKey, layoutAliasField.text);
+                            root.selectedLayoutKey = key;
+                        }
+                    }
+                }
+
+                TextField {
+                    id: layoutAliasField
+                    width: parent.width - layoutDropdown.width - parent.spacing
+                    height: layoutDropdown.implicitHeight
+                    placeholderText: "Auto"
+                    maximumLength: root.maxLayoutLabelLength
+                    validator: RegularExpressionValidator {
+                        regularExpression: /^[^\p{Cc}\p{Zl}\p{Zp}]*$/u
+                    }
+                    text: root.labelForLayout(root.selectedLayoutKey)
+                    enabled: root.selectedLayoutKey !== ""
+                    foreground: root.foreground
+                    font.family: root.fontFamily
+                    onEditingFinished: root.layoutLabelEdited(root.selectedLayoutKey, text)
+                    Keys.onEscapePressed: {
+                        text = Qt.binding(function () { return root.labelForLayout(root.selectedLayoutKey); });
+                        root.backRequested();
+                    }
+                }
             }
         }
     }
