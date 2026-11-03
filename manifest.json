@@ -5,7 +5,7 @@
   "version": "0.2.4",
   "author": "ilyaZar",
   "license": "MIT",
-  "description": "Keyboard layout picker and an interactive on-screen keyboard. With a configurable pulsing indicator, custom labels, and per-window layouts.",
+  "description": "Minimalist keyboard layout picker and an interactive on-screen keyboard. With a configurable pulsing indicator, custom labels, and per-window layouts.",
   "kinds": ["bar-widget", "service"],
   "entryPoints": {
     "barWidget": "KeyboardLayout.qml",
