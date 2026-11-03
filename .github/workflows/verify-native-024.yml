@@ -1,0 +1,95 @@
+name: Verify native binary 0.2.4
+
+on:
+  push:
+    branches: [fix-verify-native-build-0.2.4]
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    container:
+      image: docker.io/library/archlinux@sha256:3942e1ff7ee3c41bdbcb6647ed850e199caae0c56dd18a4d3fa9bb9f3d2311f1
+    env:
+      BUILD_IMAGE: docker.io/library/archlinux@sha256:3942e1ff7ee3c41bdbcb6647ed850e199caae0c56dd18a4d3fa9bb9f3d2311f1
+      LC_ALL: C.UTF-8
+      TZ: UTC
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install tools from the fixed Arch snapshot
+        run: |
+          set -euo pipefail
+          # pacman expands the repository and architecture placeholders
+          # shellcheck disable=SC2016
+          printf 'Server = https://archive.archlinux.org/repos/2026/11/03/$repo/os/$arch\n' > /etc/pacman.d/mirrorlist
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -Syyu --noconfirm --needed git jq curl json-c libxkbcommon libutf8proc
+
+      - name: Check out the verification workflow
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          path: verification
+
+      - name: Check out the exact released source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: 2eb82d018e8e900a668f662bc2ca4f4358176bb5
+          persist-credentials: false
+          path: release-source
+
+      - name: Rebuild and compare the exact shipped bytes
+        run: bash verification/build-verification/rebuild.sh release-source evidence
+
+      - name: Attest the rebuilt binary
+        id: provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: evidence/keyboard-layoutd
+
+      - name: Attest the exact release-source comparison
+        id: comparison
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: evidence/keyboard-layoutd
+          predicate-type: https://github.com/omarchy-QOL/omarchy-keyboard-layout/attestations/native-rebuild/v1
+          predicate-path: evidence/rebuild-predicate.json
+
+      - name: Upload comparison evidence and attestation bundles
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: native-0.2.4-reproducible-build
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            evidence/keyboard-layoutd
+            evidence/committed-keyboard-layoutd
+            evidence/*.json
+            evidence/*.txt
+            evidence/*.log
+            evidence/*.tsv
+            evidence/native-source.tar
+            evidence/packages/SHA256SUMS
+            ${{ steps.provenance.outputs.bundle-path }}
+            ${{ steps.comparison.outputs.bundle-path }}
+
+      - name: Summarize verification
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          ### Native 0.2.4 verification
+          Source: `2eb82d018e8e900a668f662bc2ca4f4358176bb5`
+          Git blob: `95da11e5fe556587c6e230e067bd677fdf11f0e4`
+          SHA-256: `9de81412986c72523e3fcc24cec74bff1eb59ab6478105f5b99b815406a9cd20`
+          A clean rebuild matched the committed executable byte-for-byte.
+          Both the binary and its exact release-source comparison are attested.
+          SUMMARY
