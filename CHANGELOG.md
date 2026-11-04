@@ -2,6 +2,11 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## 0.2.5 - 2026-11-04
+
+- Refresh the preview with separate layout menu, settings, and keyboard panels.
+- Clarify the optional on-screen keyboard in the marketplace description.
+
 ## 0.2.4 - 2026-11-03
 
 - Add an interactive keyboard viewer with sticky modifiers, dead keys, and
