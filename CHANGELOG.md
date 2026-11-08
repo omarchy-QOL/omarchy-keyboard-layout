@@ -2,7 +2,7 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
-## Unreleased
+## 0.2.6 - 2026-11-08
 
 - Show Omarchy's layout switching shortcut, `Super + I` by default, in Settings.
   Installs without that binding keep showing the XKB shortcut.

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.ilyazar.keyboard-layout",
   "name": "Keyboard Layout Pulse",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "author": "ilyaZar",
   "license": "MIT",
   "description": "Minimalist keyboard layout picker. Includes a toggleable interactive on-screen keyboard to view the current layout. With a configurable pulsing indicator, custom labels, and per-window layouts.",
