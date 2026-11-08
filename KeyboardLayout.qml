@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Window
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
@@ -73,9 +74,7 @@ Panel {
 
     function validLayoutLabel(value) {
         // reject broken surrogate pairs while allowing supplementary glyphs
-        return typeof value === "string" && value.length <= root.maxLayoutLabelLength && !
-                /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(value) && !
-                /[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(value);
+        return typeof value === "string" && value.length <= root.maxLayoutLabelLength && !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(value) && !/[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(value);
     }
 
     function layoutDisplayName(key) {
@@ -94,8 +93,8 @@ Panel {
             delete aliases[key];
         if (JSON.stringify(aliases) !== JSON.stringify(root.layoutLabels))
             persistSettings({
-                                layoutLabels: aliases
-                            });
+                layoutLabels: aliases
+            });
     }
 
     function setPulseColor(value) {
@@ -103,8 +102,8 @@ Panel {
             return;
         var color = PulseColor.normalizedPulseColor(value);
         persistSettings({
-                            pulseColor: color
-                        });
+            pulseColor: color
+        });
     }
 
     function resetPulse() {
@@ -115,24 +114,24 @@ Panel {
 
     function setAnimationEnabled(enabled) {
         persistSettings({
-                            animation: enabled
-                        });
+            animation: enabled
+        });
         if (!enabled)
             resetPulse();
     }
 
     function setShowSingleLayout(enabled) {
         persistSettings({
-                            showSingleLayout: enabled
-                        });
+            showSingleLayout: enabled
+        });
         if (!enabled && !root.multipleLayouts)
             root.close();
     }
 
     function setPerWindowLayouts(enabled) {
         persistSettings({
-                            perWindowLayouts: enabled
-                        });
+            perWindowLayouts: enabled
+        });
         syncLayoutTracker();
     }
 
@@ -179,8 +178,7 @@ Panel {
 
     function editKeyboardShortcut() {
         root.close();
-        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "-c", String(root.keyboardOptionsLine)
-                                 + " | normal! zz", root.keyboardConfigPath]);
+        Quickshell.execDetached(["omarchy-launch-terminal", "nvim", "-c", String(root.keyboardOptionsLine) + " | normal! zz", root.keyboardConfigPath]);
     }
 
     function clearKeyboardState() {
@@ -272,16 +270,23 @@ Panel {
         layoutPicker.resetCursor();
         root.refresh();
         layoutShortcut.refresh();
+        inputSwitchBinding.refresh();
     }
 
     onAnimationEnabledChanged: if (!animationEnabled)
-                                   resetPulse()
+        resetPulse()
     onPerWindowLayoutsChanged: syncLayoutTracker()
     onTrackerServiceChanged: syncLayoutTracker()
     Component.onCompleted: refresh()
 
     Shortcuts.XkbGroupOption {
         id: layoutShortcut
+    }
+
+    // Omarchy 4.5 binds this by default; older installs fall back to XKB.
+    Shortcuts.HyprlandBinding {
+        id: inputSwitchBinding
+        actionDescription: "Switch input language"
     }
 
     Connections {
@@ -408,9 +413,7 @@ Panel {
         text: ""
         hasVisualContent: root.layoutLabel !== ""
         labelVisible: false
-        fixedWidth: Math.min(Style.space(160), root.keycapStyle
-            ? Math.max(keycap.height, labelProbe.implicitWidth + keycap.height * 0.4) + Style.space(12)
-            : Math.max(12, labelProbe.implicitWidth + Style.space(12)))
+        fixedWidth: Math.min(Style.space(160), root.keycapStyle ? Math.max(keycap.height, labelProbe.implicitWidth + keycap.height * 0.4) + Style.space(12) : Math.max(12, labelProbe.implicitWidth + Style.space(12)))
         horizontalMargin: 6
         tooltipText: root.layoutFull
         onPressed: function (mouseButton) {
@@ -422,14 +425,28 @@ Panel {
         }
     }
 
+    // Capitals line up with the bar's icons: plain caps are a little shorter
+    // than an icon, so text doesn't outweigh glyphs, and every label sits on
+    // the icons' centre line. Centring the line box
+    // instead leaves room for descenders, so short caps hug the top.
+    TextMetrics {
+        id: capMetrics
+        font.family: button.fontFamily
+        font.bold: root.keycapStyle
+        // large, so the cap height isn't rounded to whole pixels
+        font.pixelSize: 1000
+        text: "H"
+    }
+
     Text {
         id: labelProbe
+        readonly property real capRatio: Math.max(0.1, capMetrics.tightBoundingRect.height / 1000)
+        readonly property real capHeight: font.pixelSize * capRatio
         textFormat: Text.PlainText
         visible: false
         text: root.layoutLabel
         font.family: button.fontFamily
-        font.pixelSize: root.keycapStyle ? Math.round(keycap.height * (root.layoutLabel.length > 1 ? 0.6 : 0.72))
-            : Style.font.caption
+        font.pixelSize: Math.max(1, Math.round((root.keycapStyle ? keycap.height * (root.layoutLabel.length > 1 ? 0.6 : 0.7) : Style.bar.iconSize * 0.85) / capRatio))
         font.bold: root.keycapStyle
     }
 
@@ -438,7 +455,7 @@ Panel {
         visible: root.keycapStyle
         anchors.centerIn: button
         width: Math.max(0, button.width - Style.space(12))
-        height: Style.space(15)
+        height: Style.bar.iconSize
         radius: Math.max(Math.round(height * 0.2), Math.min(Style.cornerRadius, height * 0.3))
         color: root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
         opacity: root.pulseOpacity
@@ -446,7 +463,9 @@ Panel {
         readonly property real luminance: 0.299 * color.r + 0.587 * color.g + 0.114 * color.b
 
         Behavior on color {
-            ColorAnimation { duration: 160 }
+            ColorAnimation {
+                duration: 160
+            }
         }
     }
 
@@ -457,10 +476,13 @@ Panel {
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
         maximumLineCount: 1
-        anchors.centerIn: button
+        anchors.horizontalCenter: button.horizontalCenter
+        // native glyphs snap to device pixels, so round the baseline there
+        // rather than let it floor; the window carries fractional scales
+        readonly property real dpr: Window.window ? Window.window.devicePixelRatio : 1
+        y: button.y + Math.round((button.height + labelProbe.capHeight) / 2 * dpr) / dpr - baselineOffset
         text: root.layoutLabel
-        color: root.keycapStyle ? (keycap.luminance > 0.55 ? "#20242b" : "#f5f5f5")
-            : root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
+        color: root.keycapStyle ? (keycap.luminance > 0.55 ? "#20242b" : "#f5f5f5") : root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
         opacity: root.pulseOpacity
         scale: root.pulseScale
         transformOrigin: Item.Center
@@ -497,7 +519,7 @@ Panel {
                     layoutPicker.moveCursor(dy !== 0 ? dy : dx);
             }
             onActivateRequested: if (!root.settingsPage)
-                                     layoutPicker.activateCursor()
+                layoutPicker.activateCursor()
             onCloseRequested: {
                 if (root.settingsPage)
                     root.closeSettings();
@@ -547,7 +569,7 @@ Panel {
                     perWindowLayoutsActive: root.perWindowLayoutsActive
                     trackerSupportKnown: root.trackerSupportKnown
                     trackerSupported: root.trackerSupported
-                    shortcutLabel: layoutShortcut.label
+                    shortcutLabel: inputSwitchBinding.resolvedLabel || layoutShortcut.label
                     layoutKeys: root.layoutKeys
                     layoutLabels: root.layoutLabels
                     maxLayoutLabelLength: root.maxLayoutLabelLength
@@ -564,7 +586,9 @@ Panel {
                         root.setShowSingleLayout(enabled);
                     }
                     onKeycapStyleRequested: function (enabled) {
-                        root.persistSettings({ keycapStyle: enabled });
+                        root.persistSettings({
+                            keycapStyle: enabled
+                        });
                     }
                     onPerWindowLayoutsRequested: function (enabled) {
                         root.setPerWindowLayouts(enabled);
@@ -588,8 +612,8 @@ Panel {
         configurationRevision: root.configurationRevision
         onShapeSelected: function (shape) {
             root.persistSettings({
-                                     keyboardShape: shape
-                                 });
+                keyboardShape: shape
+            });
         }
         onRefreshRequested: root.refresh()
     }

@@ -55,7 +55,6 @@ Item {
         bordered: true
         hasCursor: root.hasCursor
         focusable: true
-        clip: true
         onClicked: popup.opened ? popup.close() : popup.open()
         Keys.onDownPressed: root.triggerDownPressed()
 

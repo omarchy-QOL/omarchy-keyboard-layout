@@ -48,8 +48,12 @@ and works with the pulse animation; it is off by default.
 Enable **Activate per-window layouts** to remember each window's layout.
 Automatic restores do not pulse. Turn it off to use one layout across windows.
 
-To change configured layouts or the switching shortcut, use the gear beside
-the shortcut to open the relevant line in `~/.config/hypr/input.lua`. The plugin
+Settings shows Omarchy's layout switching shortcut, `Super + I` by default since
+Omarchy 4.5. Rebind it in `~/.config/hypr/bindings.lua`. Without that binding,
+Settings shows the XKB shortcut from `kb_options` instead.
+
+To change configured layouts or the XKB shortcut, use the gear beside the
+shortcut to open the relevant line in `~/.config/hypr/input.lua`. The plugin
 reads this configuration without rewriting it.
 
 ## Keyboard viewer

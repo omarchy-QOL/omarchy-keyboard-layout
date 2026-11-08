@@ -2,6 +2,15 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## 0.2.6 - 2026-11-08
+
+- Show Omarchy's layout switching shortcut, `Super + I` by default, in Settings.
+  Installs without that binding keep showing the XKB shortcut.
+- Keep the left border of dropdowns at fractional display scales.
+- Line the bar label up with Omarchy's icons: plain capitals are sized from the
+  icon height, the keycap matches it, and both share the icons' centre line at
+  every display scale.
+
 ## 0.2.5 - 2026-11-04
 
 - Refresh the preview with separate layout menu, settings, and keyboard panels.
