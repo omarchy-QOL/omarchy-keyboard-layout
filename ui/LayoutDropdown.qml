@@ -62,7 +62,6 @@ DropdownBase {
             focusable: true
             selected: root.selectedIndex >= 0 ? root.selectedIndex === optionButton.index : root.value === optionButton.modelData
             hasCursor: optionList.currentIndex === optionButton.index
-            clip: true
             onClicked: root.select(optionButton.index)
             onHovered: function (hovered) {
                 if (hovered)

@@ -2,6 +2,10 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## Unreleased
+
+- Keep the left border of dropdowns at fractional display scales.
+
 ## 0.2.5 - 2026-11-04
 
 - Refresh the preview with separate layout menu, settings, and keyboard panels.
