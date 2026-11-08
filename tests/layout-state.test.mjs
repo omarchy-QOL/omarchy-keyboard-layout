@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
 
 const source = readFileSync(new URL('../KeyboardLayout.qml', import.meta.url), 'utf8');
+const omarchyBindings = `${process.env.OMARCHY_PATH || '/usr/share/omarchy'}/default/hypr/bindings/input-method.lua`;
 const functions = source.slice(
     source.indexOf('    function clearKeyboardState('),
     source.indexOf('    function refresh('),
@@ -380,4 +381,25 @@ test('choosing a layout switches it without closing the main menu', () => {
     vm.runInNewContext(select + '; selectLayout(1); selectLayout(-1); selectLayout(2);', {root});
     assert.deepEqual(switches, ['1']);
     assert.equal(closes, 0);
+});
+
+test('settings prefer the Omarchy switch binding over the XKB shortcut', () => {
+    const format = readFileSync(new URL('../lib/shortcuts/ShortcutFormat.js', import.meta.url), 'utf8');
+    const ShortcutFormat = vm.runInNewContext(format.replace('.pragma library', '')
+        + '; ({bindingLabel, findBinding})');
+    const action = source.match(/id: inputSwitchBinding\n\s+actionDescription: "([^"]+)"/)[1];
+    const expression = new vm.Script(source.match(/shortcutLabel: (.+)/)[1]);
+    const label = (resolvedLabel) => expression.runInNewContext({
+        inputSwitchBinding: {resolvedLabel},
+        layoutShortcut: {label: 'Both Shift keys'},
+    });
+    const bindings = [{description: 'Emojis', modmask: 68, key: 'E'}, {description: action, modmask: 64, key: 'I'}];
+
+    assert.equal(label(ShortcutFormat.bindingLabel(ShortcutFormat.findBinding(bindings, action))), 'Super+I');
+    assert.equal(label(ShortcutFormat.bindingLabel(ShortcutFormat.findBinding([], action))), 'Both Shift keys');
+});
+
+test('the switch binding description still matches Omarchy', {skip: !existsSync(omarchyBindings)}, () => {
+    const action = source.match(/id: inputSwitchBinding\n\s+actionDescription: "([^"]+)"/)[1];
+    assert.match(readFileSync(omarchyBindings, 'utf8'), new RegExp(`o\\.bind\\("SUPER \\+ I", "${action}"`));
 });
