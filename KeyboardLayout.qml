@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Window
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
@@ -424,13 +425,28 @@ Panel {
         }
     }
 
+    // Capitals line up with the bar's icons: plain caps are a little shorter
+    // than an icon, so text doesn't outweigh glyphs, and every label sits on
+    // the icons' centre line. Centring the line box
+    // instead leaves room for descenders, so short caps hug the top.
+    TextMetrics {
+        id: capMetrics
+        font.family: button.fontFamily
+        font.bold: root.keycapStyle
+        // large, so the cap height isn't rounded to whole pixels
+        font.pixelSize: 1000
+        text: "H"
+    }
+
     Text {
         id: labelProbe
+        readonly property real capRatio: Math.max(0.1, capMetrics.tightBoundingRect.height / 1000)
+        readonly property real capHeight: font.pixelSize * capRatio
         textFormat: Text.PlainText
         visible: false
         text: root.layoutLabel
         font.family: button.fontFamily
-        font.pixelSize: root.keycapStyle ? Math.round(keycap.height * (root.layoutLabel.length > 1 ? 0.6 : 0.72)) : Style.font.caption
+        font.pixelSize: Math.max(1, Math.round((root.keycapStyle ? keycap.height * (root.layoutLabel.length > 1 ? 0.6 : 0.7) : Style.bar.iconSize * 0.85) / capRatio))
         font.bold: root.keycapStyle
     }
 
@@ -439,7 +455,7 @@ Panel {
         visible: root.keycapStyle
         anchors.centerIn: button
         width: Math.max(0, button.width - Style.space(12))
-        height: Style.space(15)
+        height: Style.bar.iconSize
         radius: Math.max(Math.round(height * 0.2), Math.min(Style.cornerRadius, height * 0.3))
         color: root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
         opacity: root.pulseOpacity
@@ -460,7 +476,11 @@ Panel {
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
         maximumLineCount: 1
-        anchors.centerIn: button
+        anchors.horizontalCenter: button.horizontalCenter
+        // native glyphs snap to device pixels, so round the baseline there
+        // rather than let it floor; the window carries fractional scales
+        readonly property real dpr: Window.window ? Window.window.devicePixelRatio : 1
+        y: button.y + Math.round((button.height + labelProbe.capHeight) / 2 * dpr) / dpr - baselineOffset
         text: root.layoutLabel
         color: root.keycapStyle ? (keycap.luminance > 0.55 ? "#20242b" : "#f5f5f5") : root.animationEnabled && pulseAnimation.running ? root.pulseColor : button.foreground
         opacity: root.pulseOpacity
