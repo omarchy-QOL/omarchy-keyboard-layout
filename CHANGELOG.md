@@ -2,6 +2,11 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## Unreleased
+
+- Undo a paste into a Settings text field on its own, without also undoing the
+  typing around it.
+
 ## 0.2.7 - 2026-11-18
 
 - Stop the Settings text fields from reading the whole clipboard on every
