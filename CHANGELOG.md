@@ -4,6 +4,11 @@ Notable changes to Keyboard Layout Pulse are documented here.
 
 ## Unreleased
 
+- Build the layout panel and the keyboard viewer the first time they are
+  opened, instead of on every monitor when the shell starts, contributed by
+  [Dielerorn](https://github.com/Dielerorn) in
+  [#24](https://github.com/omarchy-QOL/omarchy-keyboard-layout/pull/24).
+- Keep the keyboard viewer centred when its size changes, until it is moved.
 - Undo a paste into a Settings text field on its own, without also undoing the
   typing around it.
 
