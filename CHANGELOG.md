@@ -2,7 +2,7 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
-## Unreleased
+## 0.2.7 - 2026-11-18
 
 - Stop the Settings text fields from reading the whole clipboard on every
   clipboard change, which a huge or stuck clipboard could use to stall the
