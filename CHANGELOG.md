@@ -2,7 +2,7 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
-## Unreleased
+## 0.2.8 - 2026-11-18
 
 - Build the layout panel and the keyboard viewer the first time they are
   opened, instead of on every monitor when the shell starts, contributed by
