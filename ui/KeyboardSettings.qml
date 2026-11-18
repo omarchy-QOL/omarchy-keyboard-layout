@@ -157,15 +157,13 @@ Column {
         enabled: root.animationEnabled
         opacity: root.animationEnabled ? 1 : 0.35
 
-        TextField {
+        TextEntry {
             id: customColorField
+            readonly property bool acceptableInput: PulseColor.isPulseColor(text)
             width: customColorRow.width - applyColorButton.width - customColorRow.spacing
             placeholderText: "#RRGGBB"
             foreground: root.foreground
             font.family: root.fontFamily
-            validator: RegularExpressionValidator {
-                regularExpression: /^#[0-9a-fA-F]{6}$/
-            }
             onAccepted: root.applyPulseColor(customColorField.text)
             Keys.onEscapePressed: root.backRequested()
         }
@@ -422,15 +420,11 @@ Column {
                     }
                 }
 
-                TextField {
+                TextEntry {
                     id: layoutAliasField
                     width: parent.width - layoutDropdown.width - parent.spacing
                     height: layoutDropdown.implicitHeight
                     placeholderText: "Auto"
-                    maximumLength: root.maxLayoutLabelLength
-                    validator: RegularExpressionValidator {
-                        regularExpression: /^[^\p{Cc}\p{Zl}\p{Zp}]*$/u
-                    }
                     text: root.labelForLayout(root.selectedLayoutKey)
                     enabled: root.selectedLayoutKey !== ""
                     foreground: root.foreground

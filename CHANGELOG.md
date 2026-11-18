@@ -2,6 +2,12 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## 0.2.7 - 2026-11-18
+
+- Stop the Settings text fields from reading the whole clipboard on every
+  clipboard change, which a huge or stuck clipboard could use to stall the
+  shell. Paste now goes through `wl-paste`, limited to one short line.
+
 ## 0.2.6 - 2026-11-08
 
 - Show Omarchy's layout switching shortcut, `Super + I` by default, in Settings.
