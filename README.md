@@ -13,6 +13,7 @@ keyboard while keeping focus in your application.
 - x86-64, `json-c`, `libxkbcommon`, and `libutf8proc` for the keyboard viewer
   and per-window layouts
 - `wtype` for click-to-type input
+- `wl-clipboard` for pasting into the Settings text fields
 
 The native helper is bundled for x86-64. Other architectures need a native
 build for the viewer and per-window layouts; layout selection still works.
