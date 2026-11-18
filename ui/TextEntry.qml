@@ -65,8 +65,11 @@ TextArea {
                 if (!line || !root.activeFocus)
                     return;
                 const start = root.selectionStart;
+                // own undo step: Qt merges an insert with the typing next to it
+                root.textDocument.modified = false;
                 root.remove(start, root.selectionEnd);
                 root.insert(start, line);
+                root.textDocument.modified = false;
             }
         }
     }

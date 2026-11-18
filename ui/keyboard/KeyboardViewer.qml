@@ -252,10 +252,11 @@ Item {
             radius: Style.cornerRadius
             color: Commons.Color.popups.background
             borderSpec: Border.surfaceSpec("popups", "border", Commons.Color.popups.border, Style.normalBorderWidth)
+            // the size settles a frame after a first open, and with the shape
             onWidthChanged: if (root.opened)
-                                x = root.clampX(x)
+                                root.placeCard()
             onHeightChanged: if (root.opened)
-                                 y = root.clampY(y)
+                                 root.placeCard()
 
             MouseArea {
                 anchors.fill: parent
@@ -375,6 +376,8 @@ Item {
                     accentMenu.choices = [];
                     resizeProxy.x = 0;
                     startWidth = card.width;
+                    // resize from where the card is, not around the centre
+                    root.rememberPosition();
                 }
                 onReleased: root.rememberPosition()
 
