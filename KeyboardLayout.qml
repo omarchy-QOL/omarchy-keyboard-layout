@@ -167,13 +167,13 @@ Panel {
 
     function openSettings() {
         root.settingsPage = true;
-        settingsView.beginEditing();
+        panelLoader.item?.settingsView.beginEditing();
     }
 
     function closeSettings() {
         root.settingsPage = false;
-        settingsView.endEditing();
-        keyCatcher.forceActiveFocus();
+        panelLoader.item?.settingsView.endEditing();
+        panelLoader.item?.forceActiveFocus();
     }
 
     function editKeyboardShortcut() {
@@ -258,16 +258,17 @@ Panel {
     function openKeyboardViewer() {
         root.refresh();
         root.close();
-        keyboardViewer.open(button.QsWindow.window ? button.QsWindow.window.screen : null);
+        keyboardViewerLoader.active = true;
+        keyboardViewerLoader.item.open(button.QsWindow.window ? button.QsWindow.window.screen : null);
     }
 
     onOpenedChanged: {
         if (!root.opened) {
-            layoutPicker.resetCursor();
+            panelLoader.item?.layoutPicker.resetCursor();
             return;
         }
         root.settingsPage = false;
-        layoutPicker.resetCursor();
+        panelLoader.item?.layoutPicker.resetCursor();
         root.refresh();
         layoutShortcut.refresh();
         inputSwitchBinding.refresh();
@@ -506,115 +507,148 @@ Panel {
         owner: root
         bar: root.bar
         open: root.opened
-        focusTarget: keyCatcher
+        focusTarget: panelLoader.item
         contentWidth: panel.fittedContentWidth(Style.space(260))
-        contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight)
+        contentHeight: panel.fittedContentHeight(panelLoader.item ? panelLoader.item.implicitHeight : 0)
 
-        PanelKeyCatcher {
-            id: keyCatcher
-            anchors.fill: keyCatcher.parent
-            blocked: root.settingsPage ? settingsView.keyboardInputActive : layoutPicker.keyboardInputActive
-            onMoveRequested: function (dx, dy) {
-                if (!root.settingsPage)
-                    layoutPicker.moveCursor(dy !== 0 ? dy : dx);
-            }
-            onActivateRequested: if (!root.settingsPage)
-                layoutPicker.activateCursor()
-            onCloseRequested: {
-                if (root.settingsPage)
-                    root.closeSettings();
-                else
-                    root.close();
-            }
-            onTabRequested: function (direction) {
-                root.switchPanel(direction);
+        // The panel's contents are built the first time it opens and kept
+        // after that, instead of on every monitor at shell start. Built
+        // eagerly, the whole tree re-evaluated its bindings on every theme
+        // change even while the panel was closed. A Loader rather than
+        // KeyboardPanel's `content` (Omarchy 4.5+) keeps this working on 4.0.x.
+        Loader {
+            id: panelLoader
+            property bool built: false
+            anchors.fill: parent
+            focus: true
+            active: built || panel.open
+            onLoaded: {
+                built = true;
+                // On the first open the panel may have asked for focus before
+                // the contents existed.
+                if (panel.open)
+                    Qt.callLater(function () {
+                        if (panel.open && panelLoader.item)
+                            panelLoader.item.forceActiveFocus();
+                    });
             }
 
-            Column {
-                id: panelColumn
-                width: parent.width
-                spacing: Style.space(6)
-
-                LocalUi.LayoutPicker {
-                    id: layoutPicker
-                    visible: !root.settingsPage
-                    width: parent.width
-                    layouts: root.layouts
-                    selectedIndex: root.activeLayoutIndex
-                    foreground: root.bar.foreground
-                    fontFamily: root.bar.fontFamily
-                    onLayoutChosen: function (index) {
-                        root.selectLayout(index);
-                    }
-                    onSettingsRequested: root.openSettings()
-                    onFocusRequested: keyCatcher.forceActiveFocus()
-                    onViewerRequested: root.openKeyboardViewer()
-                    onEmojiRequested: {
+            sourceComponent: PanelKeyCatcher {
+                id: keyCatcher
+                property alias layoutPicker: layoutPicker
+                property alias settingsView: settingsView
+                anchors.fill: keyCatcher.parent
+                implicitHeight: panelColumn.implicitHeight
+                blocked: root.settingsPage ? settingsView.keyboardInputActive : layoutPicker.keyboardInputActive
+                onMoveRequested: function (dx, dy) {
+                    if (!root.settingsPage)
+                        layoutPicker.moveCursor(dy !== 0 ? dy : dx);
+                }
+                onActivateRequested: if (!root.settingsPage)
+                    layoutPicker.activateCursor()
+                onCloseRequested: {
+                    if (root.settingsPage)
+                        root.closeSettings();
+                    else
                         root.close();
-                        root.bar.run("omarchy-shell shell toggle omarchy.emojis");
-                    }
+                }
+                onTabRequested: function (direction) {
+                    root.switchPanel(direction);
                 }
 
-                LocalUi.KeyboardSettings {
-                    id: settingsView
-                    visible: root.settingsPage
+                Column {
+                    id: panelColumn
                     width: parent.width
-                    foreground: root.bar.foreground
-                    urgent: root.urgent
-                    fontFamily: root.bar.fontFamily
-                    pulseColor: root.pulseColor
-                    animationEnabled: root.animationEnabled
-                    showSingleLayout: root.showSingleLayout
-                    keycapStyle: root.keycapStyle
-                    perWindowLayoutsActive: root.perWindowLayoutsActive
-                    trackerSupportKnown: root.trackerSupportKnown
-                    trackerSupported: root.trackerSupported
-                    shortcutLabel: inputSwitchBinding.resolvedLabel || layoutShortcut.label
-                    layoutKeys: root.layoutKeys
-                    layoutLabels: root.layoutLabels
-                    maxLayoutLabelLength: root.maxLayoutLabelLength
-                    onLayoutLabelEdited: function (key, value) {
-                        root.setLayoutDisplayName(key, value);
+                    spacing: Style.space(6)
+
+                    LocalUi.LayoutPicker {
+                        id: layoutPicker
+                        visible: !root.settingsPage
+                        width: parent.width
+                        layouts: root.layouts
+                        selectedIndex: root.activeLayoutIndex
+                        foreground: root.bar.foreground
+                        fontFamily: root.bar.fontFamily
+                        onLayoutChosen: function (index) {
+                            root.selectLayout(index);
+                        }
+                        onSettingsRequested: root.openSettings()
+                        onFocusRequested: keyCatcher.forceActiveFocus()
+                        onViewerRequested: root.openKeyboardViewer()
+                        onEmojiRequested: {
+                            root.close();
+                            root.bar.run("omarchy-shell shell toggle omarchy.emojis");
+                        }
                     }
-                    onPulseColorSelected: function (value) {
-                        root.setPulseColor(value);
+
+                    LocalUi.KeyboardSettings {
+                        id: settingsView
+                        visible: root.settingsPage
+                        width: parent.width
+                        foreground: root.bar.foreground
+                        urgent: root.urgent
+                        fontFamily: root.bar.fontFamily
+                        pulseColor: root.pulseColor
+                        animationEnabled: root.animationEnabled
+                        showSingleLayout: root.showSingleLayout
+                        keycapStyle: root.keycapStyle
+                        perWindowLayoutsActive: root.perWindowLayoutsActive
+                        trackerSupportKnown: root.trackerSupportKnown
+                        trackerSupported: root.trackerSupported
+                        shortcutLabel: inputSwitchBinding.resolvedLabel || layoutShortcut.label
+                        layoutKeys: root.layoutKeys
+                        layoutLabels: root.layoutLabels
+                        maxLayoutLabelLength: root.maxLayoutLabelLength
+                        onLayoutLabelEdited: function (key, value) {
+                            root.setLayoutDisplayName(key, value);
+                        }
+                        onPulseColorSelected: function (value) {
+                            root.setPulseColor(value);
+                        }
+                        onAnimationRequested: function (enabled) {
+                            root.setAnimationEnabled(enabled);
+                        }
+                        onSingleLayoutRequested: function (enabled) {
+                            root.setShowSingleLayout(enabled);
+                        }
+                        onKeycapStyleRequested: function (enabled) {
+                            root.persistSettings({
+                                keycapStyle: enabled
+                            });
+                        }
+                        onPerWindowLayoutsRequested: function (enabled) {
+                            root.setPerWindowLayouts(enabled);
+                        }
+                        onShortcutEditRequested: root.editKeyboardShortcut()
+                        onBackRequested: root.closeSettings()
+                        onCloseRequested: root.close()
+                        onFocusRequested: keyCatcher.forceActiveFocus()
                     }
-                    onAnimationRequested: function (enabled) {
-                        root.setAnimationEnabled(enabled);
-                    }
-                    onSingleLayoutRequested: function (enabled) {
-                        root.setShowSingleLayout(enabled);
-                    }
-                    onKeycapStyleRequested: function (enabled) {
-                        root.persistSettings({
-                            keycapStyle: enabled
-                        });
-                    }
-                    onPerWindowLayoutsRequested: function (enabled) {
-                        root.setPerWindowLayouts(enabled);
-                    }
-                    onShortcutEditRequested: root.editKeyboardShortcut()
-                    onBackRequested: root.closeSettings()
-                    onCloseRequested: root.close()
-                    onFocusRequested: keyCatcher.forceActiveFocus()
                 }
             }
         }
     }
 
-    KeyboardUi.KeyboardViewer {
-        id: keyboardViewer
-        keyboard: root.keyboardDetails
-        helperPath: root.trackerService ? root.trackerService.helperPath : ""
-        nativeSupported: root.trackerService ? !root.trackerService.supportKnown || root.trackerService.supported : true
-        fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-        keyboardShape: root.setting("keyboardShape", "auto")
-        configurationRevision: root.configurationRevision
-        onShapeSelected: function (shape) {
-            root.persistSettings({
-                keyboardShape: shape
-            });
+    // The keyboard viewer is built the first time it is asked for, not on
+    // every monitor at shell start. openKeyboardViewer() activates it.
+    Loader {
+        id: keyboardViewerLoader
+        active: false
+
+        sourceComponent: KeyboardUi.KeyboardViewer {
+            id: keyboardViewer
+            keyboard: root.keyboardDetails
+            helperPath: root.trackerService ? root.trackerService.helperPath : ""
+            nativeSupported: root.trackerService ? !root.trackerService.supportKnown || root.trackerService.supported : true
+            fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
+            keyboardShape: root.setting("keyboardShape", "auto")
+            configurationRevision: root.configurationRevision
+            onShapeSelected: function (shape) {
+                root.persistSettings({
+                    keyboardShape: shape
+                });
+            }
+            onRefreshRequested: root.refresh()
         }
-        onRefreshRequested: root.refresh()
     }
 }
