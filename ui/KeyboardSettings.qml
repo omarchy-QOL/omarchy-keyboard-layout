@@ -448,7 +448,7 @@ Column {
 
             Text {
                 width: parent.width
-                text: "Leave blank to use the XKB name."
+                text: "Leave blank to use default XKB name."
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
