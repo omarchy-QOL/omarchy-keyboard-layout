@@ -82,12 +82,20 @@ Row {
         PanelActionButton {
             size: shapeSelector.height
             iconText: "×"
-            tooltipText: "Close keyboard viewer"
             foreground: Commons.Color.popups.text
             fontFamily: root.fontFamily
             fontSize: Style.font.title
             bordered: true
             onClicked: root.closeRequested()
+            onHovered: function (isHovered) {
+                closeTip.visible = isHovered;
+            }
+
+            LocalUi.Tip {
+                id: closeTip
+                text: "Close keyboard viewer"
+                fontFamily: root.fontFamily
+            }
         }
     }
 }

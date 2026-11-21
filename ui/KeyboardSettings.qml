@@ -124,7 +124,7 @@ Column {
                 foreground: root.foreground
                 onToggled: root.animationRequested(!animationToggle.checked)
 
-                PanelToolTip {
+                Tip {
                     visible: animationToggle.containsMouse
                     text: root.animationEnabled ? "Disable the layout-change animation" : "Enable the layout-change animation"
                     fontFamily: root.fontFamily
@@ -241,7 +241,6 @@ Column {
             PanelActionButton {
                 id: editShortcutButton
                 anchors.centerIn: parent
-                tooltipText: "Edit layouts and keybinding shortcut"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 fontSize: Style.font.bodySmall
@@ -249,6 +248,15 @@ Column {
                 bordered: true
                 focusable: true
                 onClicked: root.shortcutEditRequested()
+                onHovered: function (isHovered) {
+                    shortcutTip.visible = isHovered;
+                }
+
+                Tip {
+                    id: shortcutTip
+                    text: "Edit layouts and keybinding shortcut"
+                    fontFamily: root.fontFamily
+                }
 
                 Text {
                     id: shortcutGear
@@ -298,7 +306,7 @@ Column {
             foreground: root.foreground
             onToggled: root.singleLayoutRequested(!singleLayoutToggle.checked)
 
-            PanelToolTip {
+            Tip {
                 visible: singleLayoutToggle.containsMouse
                 text: root.showSingleLayout ? "Hide when only one layout is configured" : "Keep visible when only one layout is configured"
                 fontFamily: root.fontFamily
@@ -332,6 +340,12 @@ Column {
             checked: root.keycapStyle
             foreground: root.foreground
             onToggled: root.keycapStyleRequested(!keycapToggle.checked)
+
+            Tip {
+                visible: keycapToggle.containsMouse
+                text: root.keycapStyle ? "Show the plain bar label" : "Show the bar label as a keycap"
+                fontFamily: root.fontFamily
+            }
         }
     }
 
@@ -363,7 +377,7 @@ Column {
             foreground: root.foreground
             onToggled: root.perWindowLayoutsRequested(!perWindowToggle.checked)
 
-            PanelToolTip {
+            Tip {
                 visible: perWindowToggle.containsMouse
                 text: root.trackerSupported ? (root.perWindowLayoutsActive ? "Use one layout across all windows" : "Remember the layout used in each window") : "Per-window layouts are unavailable on this system"
                 fontFamily: root.fontFamily
