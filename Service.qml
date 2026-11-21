@@ -35,10 +35,10 @@ Item {
     }
 
     function trackerCommand() {
-        var command = ["setpriv", "--pdeathsig", "TERM", root.helperPath]
+        var command = ["setpriv", "--pdeathsig", "TERM", root.helperPath];
         if (root.newWindowLayout >= 0)
-            command.push("--new-window-layout", String(root.newWindowLayout))
-        return command
+            command.push("--new-window-layout", String(root.newWindowLayout));
+        return command;
     }
 
     function syncTracker() {
