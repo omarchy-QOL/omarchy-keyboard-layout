@@ -412,6 +412,10 @@ Column {
             options: ["Current"].concat(root.layoutKeys)
             selectedIndex: root.newWindowLayoutIndex + 1
             value: newWindowDropdown.options[newWindowDropdown.selectedIndex]
+            tooltip: "The layout a newly opened window starts with.\n"
+                     + "Current keeps the layout you are using.\n"
+                     + "Pick one to always start with that instead.\n"
+                     + "A window remembers its own once you switch."
             foreground: root.foreground
             fontFamily: root.fontFamily
             onIndexSelected: function (index) {
