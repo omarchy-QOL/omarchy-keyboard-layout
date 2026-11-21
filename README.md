@@ -49,9 +49,9 @@ and works with the pulse animation; it is off by default.
 Enable **Activate per-window layouts** to remember each window's layout.
 Automatic restores do not pulse. Turn it off to use one layout across windows.
 
-While per-window layouts are active, **Default for new windows** starts every
-window that has no remembered layout on the first configured layout instead of
-the layout that is currently in use. It is off by default.
+While per-window layouts are active, **New windows use** picks the layout for
+a window that has no remembered layout yet. **Current** keeps the layout that
+is in use, which is the default; any configured layout can be chosen instead.
 
 Settings shows Omarchy's layout switching shortcut, `Super + I` by default since
 Omarchy 4.5. Rebind it in `~/.config/hypr/bindings.lua`. Without that binding,

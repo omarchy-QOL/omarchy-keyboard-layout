@@ -408,18 +408,19 @@ test('the tracker receives both per-window settings', () => {
     const sync = source.match(/    function syncLayoutTracker\(\) \{[\s\S]*?\n    \}/)[0];
     const calls = [];
     const root = {
-        newWindowDefault: true,
+        layoutKeys: ['US', 'DE'],
+        newWindowLayoutIndex: 1,
         perWindowLayouts: true,
         perWindowLayoutsActive: true,
         automaticRestoreLayout: 2,
         trackerService: {
-            setNewWindowDefault: value => calls.push(['newWindowDefault', value]),
+            setNewWindowLayout: value => calls.push(['newWindowLayout', value]),
             setTrackingEnabled: value => calls.push(['tracking', value]),
         },
         automaticRestoreTimer: {stop: () => calls.push(['stop'])},
     };
     vm.runInNewContext(sync + '; syncLayoutTracker();', {root});
-    assert.deepEqual(calls, [['newWindowDefault', true], ['tracking', true]]);
+    assert.deepEqual(calls, [['newWindowLayout', 1], ['tracking', true]]);
     assert.equal(root.automaticRestoreLayout, 2);
 });
 
@@ -427,20 +428,20 @@ test('the widget re-syncs the tracker when the shell injects a setting', () => {
     // The shell assigns `settings` after the widget is constructed, so a
     // property bound to setting() can be read before it settles. The widget
     // must therefore also react to the value changing, not only bind to it.
-    assert.match(source, /onNewWindowDefaultChanged:\s*syncLayoutTracker\(\)/);
+    assert.match(source, /onNewWindowLayoutIndexChanged:\s*syncLayoutTracker\(\)/);
     assert.match(source, /onPerWindowLayoutsChanged:\s*syncLayoutTracker\(\)/);
 });
 
-test('the tracker command passes the flag only while the setting is on', () => {
+test('the tracker command passes the layout for new windows only when one is set', () => {
     const service = readFileSync(new URL('../Service.qml', import.meta.url), 'utf8');
     const command = service.match(/    function trackerCommand\(\) \{[\s\S]*?\n    \}/)[0];
     // Copy into the host realm: arrays built inside the VM have a different
     // Array prototype and fail deepStrictEqual against literals.
-    const run = enabled => Array.from(vm.runInNewContext(command + '; trackerCommand();', {
-        root: {newWindowDefault: enabled, helperPath: '/helper'},
+    const run = layout => Array.from(vm.runInNewContext(command + '; trackerCommand();', {
+        root: {newWindowLayout: layout, helperPath: '/helper'},
     }));
-    assert.deepEqual(run(true), ['setpriv', '--pdeathsig', 'TERM', '/helper', '--new-window-default']);
-    assert.deepEqual(run(false), ['setpriv', '--pdeathsig', 'TERM', '/helper']);
+    assert.deepEqual(run(1), ['setpriv', '--pdeathsig', 'TERM', '/helper', '--new-window-layout', '1']);
+    assert.deepEqual(run(-1), ['setpriv', '--pdeathsig', 'TERM', '/helper']);
 });
 
 test('the new-window label is no wider than the widest settings label', () => {

@@ -25,7 +25,9 @@ Panel {
     readonly property bool showSingleLayout: setting("showSingleLayout", false) === true
     readonly property bool keycapStyle: setting("keycapStyle", false) === true
     readonly property bool perWindowLayouts: setting("perWindowLayouts", false) === true
-    readonly property bool newWindowDefault: setting("newWindowDefault", false) === true
+    // stored by name, so it survives reordering kb_layout; -1 keeps the
+    // layout in use
+    readonly property int newWindowLayoutIndex: root.layoutKeys.indexOf(setting("newWindowLayout", ""))
     readonly property bool trackerSupportKnown: trackerService ? trackerService.supportKnown : false
     readonly property bool trackerSupported: trackerService ? trackerService.supported : false
     readonly property bool perWindowLayoutsActive: perWindowLayouts && trackerSupported
@@ -136,16 +138,17 @@ Panel {
         syncLayoutTracker();
     }
 
-    function setNewWindowDefault(enabled) {
+    function setNewWindowLayout(key) {
         persistSettings({
-            newWindowDefault: enabled
+            newWindowLayout: key
         });
         syncLayoutTracker();
     }
 
     function syncLayoutTracker() {
-        if (root.trackerService && typeof root.trackerService.setNewWindowDefault === "function")
-            root.trackerService.setNewWindowDefault(root.newWindowDefault);
+        // not before the layouts are known, or the helper restarts at startup
+        if (root.layoutKeys.length > 0 && root.trackerService && typeof root.trackerService.setNewWindowLayout === "function")
+            root.trackerService.setNewWindowLayout(root.newWindowLayoutIndex);
         if (root.trackerService && typeof root.trackerService.setTrackingEnabled === "function")
             root.trackerService.setTrackingEnabled(root.perWindowLayouts);
         if (!root.perWindowLayoutsActive) {
@@ -288,7 +291,7 @@ Panel {
         resetPulse()
     onPerWindowLayoutsChanged: syncLayoutTracker()
     onTrackerServiceChanged: syncLayoutTracker()
-    onNewWindowDefaultChanged: syncLayoutTracker()
+    onNewWindowLayoutIndexChanged: syncLayoutTracker()
     Component.onCompleted: refresh()
 
     Shortcuts.XkbGroupOption {
@@ -604,7 +607,7 @@ Panel {
                         showSingleLayout: root.showSingleLayout
                         keycapStyle: root.keycapStyle
                         perWindowLayoutsActive: root.perWindowLayoutsActive
-                        newWindowDefault: root.newWindowDefault
+                        newWindowLayoutIndex: root.newWindowLayoutIndex
                         trackerSupportKnown: root.trackerSupportKnown
                         trackerSupported: root.trackerSupported
                         shortcutLabel: inputSwitchBinding.resolvedLabel || layoutShortcut.label
@@ -631,8 +634,8 @@ Panel {
                         onPerWindowLayoutsRequested: function (enabled) {
                             root.setPerWindowLayouts(enabled);
                         }
-                        onNewWindowDefaultRequested: function (enabled) {
-                            root.setNewWindowDefault(enabled);
+                        onNewWindowLayoutRequested: function (key) {
+                            root.setNewWindowLayout(key);
                         }
                         onShortcutEditRequested: root.editKeyboardShortcut()
                         onBackRequested: root.closeSettings()

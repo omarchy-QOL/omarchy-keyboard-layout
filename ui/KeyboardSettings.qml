@@ -16,14 +16,14 @@ Column {
     required property bool showSingleLayout
     property bool keycapStyle: false
     required property bool perWindowLayoutsActive
-    required property bool newWindowDefault
+    required property int newWindowLayoutIndex
     required property bool trackerSupportKnown
     required property bool trackerSupported
     required property string shortcutLabel
     required property var layoutKeys
     required property var layoutLabels
     required property int maxLayoutLabelLength
-    readonly property bool keyboardInputActive: colorDropdown.popupOpen || layoutDropdown.popupOpen || layoutLabelEditor.activeFocus || (customColorEditorVisible && customColorField.activeFocus)
+    readonly property bool keyboardInputActive: colorDropdown.popupOpen || newWindowDropdown.popupOpen || layoutDropdown.popupOpen || layoutLabelEditor.activeFocus || (customColorEditorVisible && customColorField.activeFocus)
     readonly property int compactToggleHeight: Math.round(Style.font.caption * 1.2)
     property bool customColorEditorVisible: false
     property string selectedLayoutKey: ""
@@ -38,7 +38,7 @@ Column {
     signal singleLayoutRequested(bool enabled)
     signal keycapStyleRequested(bool enabled)
     signal perWindowLayoutsRequested(bool enabled)
-    signal newWindowDefaultRequested(bool enabled)
+    signal newWindowLayoutRequested(string key)
     signal shortcutEditRequested()
     signal layoutLabelEdited(string key, string value)
     signal backRequested()
@@ -308,6 +308,35 @@ Column {
 
     Item {
         width: parent.width
+        implicitHeight: Math.max(keycapLabel.implicitHeight, keycapToggle.implicitHeight)
+
+        Text {
+            id: keycapLabel
+            anchors.left: parent.left
+            anchors.right: keycapToggle.left
+            anchors.rightMargin: Style.space(6)
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Keycap style"
+            elide: Text.ElideRight
+            color: root.keycapStyle ? root.foreground : Qt.darker(root.foreground, 2.3)
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+        }
+
+        ToggleSwitch {
+            id: keycapToggle
+            anchors.right: parent.right
+            anchors.verticalCenter: keycapLabel.verticalCenter
+            trackHeight: root.compactToggleHeight
+            cursorPad: Style.space(3)
+            checked: root.keycapStyle
+            foreground: root.foreground
+            onToggled: root.keycapStyleRequested(!keycapToggle.checked)
+        }
+    }
+
+    Item {
+        width: parent.width
         implicitHeight: Math.max(perWindowLabel.implicitHeight, perWindowToggle.implicitHeight)
 
         Text {
@@ -344,66 +373,36 @@ Column {
 
     Item {
         width: parent.width
-        visible: root.perWindowLayoutsActive
-        implicitHeight: visible ? Math.max(newWindowLabel.implicitHeight, newWindowToggle.implicitHeight) : 0
+        implicitHeight: Math.max(newWindowLabel.implicitHeight, newWindowDropdown.implicitHeight)
+        enabled: root.perWindowLayoutsActive
+        opacity: enabled ? 1 : 0.35
 
         Text {
             id: newWindowLabel
             anchors.left: parent.left
-            anchors.right: newWindowToggle.left
+            anchors.right: newWindowDropdown.left
             anchors.rightMargin: Style.space(6)
             anchors.verticalCenter: parent.verticalCenter
-            text: "Default for new windows"
+            text: "New windows use"
             elide: Text.ElideRight
-            color: root.newWindowDefault ? root.foreground : Qt.darker(root.foreground, 2.3)
+            color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
         }
 
-        ToggleSwitch {
-            id: newWindowToggle
+        LayoutDropdown {
+            id: newWindowDropdown
             anchors.right: parent.right
-            anchors.verticalCenter: newWindowLabel.verticalCenter
-            trackHeight: root.compactToggleHeight
-            cursorPad: Style.space(3)
-            checked: root.newWindowDefault
+            width: layoutDropdown.width
+            // the XKB names, as custom labels are only for display
+            options: ["Current"].concat(root.layoutKeys)
+            selectedIndex: root.newWindowLayoutIndex + 1
+            value: newWindowDropdown.options[newWindowDropdown.selectedIndex]
             foreground: root.foreground
-            onToggled: root.newWindowDefaultRequested(!newWindowToggle.checked)
-
-            PanelToolTip {
-                visible: newWindowToggle.containsMouse
-                text: root.newWindowDefault ? "New windows start on the layout that is in use now" : "New windows start on the first configured layout"
-                fontFamily: root.fontFamily
+            fontFamily: root.fontFamily
+            onIndexSelected: function (index) {
+                root.newWindowLayoutRequested(index > 0 ? root.layoutKeys[index - 1] : "");
             }
-        }
-    }
-
-    Item {
-        width: parent.width
-        implicitHeight: Math.max(keycapLabel.implicitHeight, keycapToggle.implicitHeight)
-
-        Text {
-            id: keycapLabel
-            anchors.left: parent.left
-            anchors.right: keycapToggle.left
-            anchors.rightMargin: Style.space(6)
-            anchors.verticalCenter: parent.verticalCenter
-            text: "Keycap style"
-            elide: Text.ElideRight
-            color: root.keycapStyle ? root.foreground : Qt.darker(root.foreground, 2.3)
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-        }
-
-        ToggleSwitch {
-            id: keycapToggle
-            anchors.right: parent.right
-            anchors.verticalCenter: keycapLabel.verticalCenter
-            trackHeight: root.compactToggleHeight
-            cursorPad: Style.space(3)
-            checked: root.keycapStyle
-            foreground: root.foreground
-            onToggled: root.keycapStyleRequested(!keycapToggle.checked)
         }
     }
 

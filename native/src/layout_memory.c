@@ -43,13 +43,13 @@ void layout_memory_init(struct layout_memory *memory, int default_layout) {
   *memory = (struct layout_memory){
       .active_layout = -1,
       .default_layout = default_layout,
-      .new_window_default = false,
+      .new_window_layout = -1,
   };
 }
 
-void layout_memory_set_new_window_default(struct layout_memory *memory,
-                                          bool enabled) {
-  memory->new_window_default = enabled;
+void layout_memory_set_new_window_layout(struct layout_memory *memory,
+                                         int layout) {
+  memory->new_window_layout = layout;
 }
 
 void layout_memory_destroy(struct layout_memory *memory) {
@@ -94,11 +94,11 @@ int layout_memory_focus(struct layout_memory *memory, uint64_t window,
     return 0;
 
   struct window_layout *entry = find_window(memory, window);
-  // Without a saved layout a window normally inherits the active layout. When
-  // the option is enabled it starts on the configured default instead.
-  int unknown_window_layout =
-      memory->new_window_default ? memory->default_layout : memory->active_layout;
-  int target = entry == NULL ? unknown_window_layout : entry->layout;
+  // a window without a saved layout inherits the active one, unless a layout
+  // for new windows is set
+  int inherited = memory->new_window_layout >= 0 ? memory->new_window_layout
+                                                 : memory->active_layout;
+  int target = entry == NULL ? inherited : entry->layout;
   if (target < 0)
     target = memory->default_layout;
   if (target == memory->active_layout)

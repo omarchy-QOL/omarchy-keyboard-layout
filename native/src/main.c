@@ -4,14 +4,13 @@
 
 #include <errno.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
-enum { DEFAULT_LAYOUT = 0, EVENT_SIZE = 4096 };
+enum { DEFAULT_LAYOUT = 0, MAX_LAYOUTS = 32, EVENT_SIZE = 4096 };
 
 struct app {
   struct hypr_ipc ipc;
@@ -133,13 +132,16 @@ int main(int argc, char **argv) {
   if (argc == 2 && strcmp(argv[1], "--describe-keymap") == 0)
     return keymap_describe(stdin, stdout);
 
-  bool new_window_default = false;
-  if (argc == 2 && strcmp(argv[1], "--new-window-default") == 0) {
-    new_window_default = true;
-  } else if (argc != 1) {
-    fprintf(stderr,
-            "usage: keyboard-layoutd [--new-window-default | --probe | "
-            "--describe-keymap]\n");
+  int new_window_layout = -1;
+  if (argc == 3 && strcmp(argv[1], "--new-window-layout") == 0) {
+    char *end = NULL;
+    long layout = strtol(argv[2], &end, 10);
+    if (end != argv[2] && *end == '\0' && layout >= 0 && layout < MAX_LAYOUTS)
+      new_window_layout = (int)layout;
+  }
+  if (argc != 1 && new_window_layout < 0) {
+    fprintf(stderr, "usage: keyboard-layoutd [--new-window-layout INDEX | "
+                    "--probe | --describe-keymap]\n");
     return EXIT_FAILURE;
   }
   struct sigaction action = {.sa_handler = request_stop};
@@ -155,7 +157,7 @@ int main(int argc, char **argv) {
   }
 
   layout_memory_init(&app.memory, DEFAULT_LAYOUT);
-  layout_memory_set_new_window_default(&app.memory, new_window_default);
+  layout_memory_set_new_window_layout(&app.memory, new_window_layout);
   while (!stop_requested) {
     int socket_fd = hypr_ipc_connect_events(&app.ipc);
     if (socket_fd >= 0) {
