@@ -85,6 +85,17 @@ omarchy plugin remove io.github.ilyazar.keyboard-layout --yes
 
 Preferences are stored in Omarchy's `shell.json` and retained for reinstalling.
 
+## Tests
+
+CI runs the native and JavaScript tests on every push and pull request. The QML
+tests need Quickshell and an installed Omarchy, so they only run locally:
+
+```bash
+make -C native all test
+node --test tests/layout-state.test.mjs tests/keyboard-viewer.test.mjs
+node tests/run-qml.mjs
+```
+
 ## License
 
 MIT
