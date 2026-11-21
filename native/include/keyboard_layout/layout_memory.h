@@ -16,9 +16,12 @@ struct layout_memory {
   uint64_t focused_window;
   int active_layout;
   int default_layout;
+  int new_window_layout;
 };
 
 void layout_memory_init(struct layout_memory *memory, int default_layout);
+void layout_memory_set_new_window_layout(struct layout_memory *memory,
+                                         int layout);
 void layout_memory_destroy(struct layout_memory *memory);
 int layout_memory_reset(struct layout_memory *memory, uint64_t focused_window,
                         int active_layout);

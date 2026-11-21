@@ -12,6 +12,8 @@ Item {
     readonly property string helperPath: pluginPath + "/native/keyboard-layoutd"
 
     property bool trackingEnabled: false
+    // layout for windows without a remembered one, -1 keeps the one in use
+    property int newWindowLayout: -1
     property bool supportKnown: false
     property bool supported: false
 
@@ -20,6 +22,23 @@ Item {
     function setTrackingEnabled(enabled) {
         root.trackingEnabled = enabled;
         root.syncTracker();
+    }
+
+    function setNewWindowLayout(layout) {
+        if (root.newWindowLayout === layout)
+            return;
+        root.newWindowLayout = layout;
+        // The option is a command-line argument, so restart a running helper
+        // to pick it up.
+        if (layoutTracker.running)
+            layoutTracker.running = false;
+    }
+
+    function trackerCommand() {
+        var command = ["setpriv", "--pdeathsig", "TERM", root.helperPath];
+        if (root.newWindowLayout >= 0)
+            command.push("--new-window-layout", String(root.newWindowLayout));
+        return command;
     }
 
     function syncTracker() {
@@ -85,7 +104,7 @@ Item {
 
     Process {
         id: layoutTracker
-        command: ["setpriv", "--pdeathsig", "TERM", root.helperPath]
+        command: root.trackerCommand()
         stdout: SplitParser {
             onRead: function (line) {
                 root?.parseRestore(line);

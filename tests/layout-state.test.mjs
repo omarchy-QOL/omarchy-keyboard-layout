@@ -403,3 +403,35 @@ test('the switch binding description still matches Omarchy', {skip: !existsSync(
     const action = source.match(/id: inputSwitchBinding\n\s+actionDescription: "([^"]+)"/)[1];
     assert.match(readFileSync(omarchyBindings, 'utf8'), new RegExp(`o\\.bind\\("SUPER \\+ I", "${action}"`));
 });
+
+test('the tracker receives both per-window settings', () => {
+    const sync = source.match(/    function syncLayoutTracker\(\) \{[\s\S]*?\n    \}/)[0];
+    const calls = [];
+    const root = {
+        layoutKeys: ['US', 'DE'],
+        newWindowLayoutIndex: 1,
+        perWindowLayouts: true,
+        perWindowLayoutsActive: true,
+        automaticRestoreLayout: 2,
+        trackerService: {
+            setNewWindowLayout: value => calls.push(['newWindowLayout', value]),
+            setTrackingEnabled: value => calls.push(['tracking', value]),
+        },
+        automaticRestoreTimer: {stop: () => calls.push(['stop'])},
+    };
+    vm.runInNewContext(sync + '; syncLayoutTracker();', {root});
+    assert.deepEqual(calls, [['newWindowLayout', 1], ['tracking', true]]);
+    assert.equal(root.automaticRestoreLayout, 2);
+});
+
+test('the tracker command passes the layout for new windows only when one is set', () => {
+    const service = readFileSync(new URL('../Service.qml', import.meta.url), 'utf8');
+    const command = service.match(/    function trackerCommand\(\) \{[\s\S]*?\n    \}/)[0];
+    // Copy into the host realm: arrays built inside the VM have a different
+    // Array prototype and fail deepStrictEqual against literals.
+    const run = layout => Array.from(vm.runInNewContext(command + '; trackerCommand();', {
+        root: {newWindowLayout: layout, helperPath: '/helper'},
+    }));
+    assert.deepEqual(run(1), ['setpriv', '--pdeathsig', 'TERM', '/helper', '--new-window-layout', '1']);
+    assert.deepEqual(run(-1), ['setpriv', '--pdeathsig', 'TERM', '/helper']);
+});

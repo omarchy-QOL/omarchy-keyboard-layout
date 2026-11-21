@@ -49,6 +49,10 @@ and works with the pulse animation; it is off by default.
 Enable **Activate per-window layouts** to remember each window's layout.
 Automatic restores do not pulse. Turn it off to use one layout across windows.
 
+While per-window layouts are active, **New windows use** picks the layout for
+a window that has no remembered layout yet. **Current** keeps the layout that
+is in use, which is the default; any configured layout can be chosen instead.
+
 Settings shows Omarchy's layout switching shortcut, `Super + I` by default since
 Omarchy 4.5. Rebind it in `~/.config/hypr/bindings.lua`. Without that binding,
 Settings shows the XKB shortcut from `kb_options` instead.
@@ -84,6 +88,17 @@ omarchy plugin remove io.github.ilyazar.keyboard-layout --yes
 ```
 
 Preferences are stored in Omarchy's `shell.json` and retained for reinstalling.
+
+## Tests
+
+CI runs the native and JavaScript tests on every push and pull request. The QML
+tests need Quickshell and an installed Omarchy, so they only run locally:
+
+```bash
+make -C native all test
+node --test tests/layout-state.test.mjs tests/keyboard-viewer.test.mjs
+node tests/run-qml.mjs
+```
 
 ## License
 

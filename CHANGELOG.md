@@ -2,6 +2,18 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## 0.2.9 - 2026-11-21
+
+- Add a **New windows use** setting for per-window layouts, so a window
+  without a remembered layout opens on a chosen layout instead of the one that
+  is currently active, contributed by
+  [pageantry](https://github.com/pageantry) in
+  [#27](https://github.com/omarchy-QOL/omarchy-keyboard-layout/pull/27).
+- Add tooltips to the layout menu, to **Keycap style** and to the new setting,
+  and show the plugin's tooltips after 200 ms instead of 400 ms.
+- Move **Keycap style** above the per-window settings.
+- Stop a binding loop warning when the panel is first opened.
+
 ## 0.2.8 - 2026-11-18
 
 - Build the layout panel and the keyboard viewer the first time they are

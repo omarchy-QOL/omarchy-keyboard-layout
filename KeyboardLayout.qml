@@ -25,6 +25,9 @@ Panel {
     readonly property bool showSingleLayout: setting("showSingleLayout", false) === true
     readonly property bool keycapStyle: setting("keycapStyle", false) === true
     readonly property bool perWindowLayouts: setting("perWindowLayouts", false) === true
+    // stored by name, so it survives reordering kb_layout; -1 keeps the
+    // layout in use
+    readonly property int newWindowLayoutIndex: root.layoutKeys.indexOf(setting("newWindowLayout", ""))
     readonly property bool trackerSupportKnown: trackerService ? trackerService.supportKnown : false
     readonly property bool trackerSupported: trackerService ? trackerService.supported : false
     readonly property bool perWindowLayoutsActive: perWindowLayouts && trackerSupported
@@ -135,7 +138,17 @@ Panel {
         syncLayoutTracker();
     }
 
+    function setNewWindowLayout(key) {
+        persistSettings({
+            newWindowLayout: key
+        });
+        syncLayoutTracker();
+    }
+
     function syncLayoutTracker() {
+        // not before the layouts are known, or the helper restarts at startup
+        if (root.layoutKeys.length > 0 && root.trackerService && typeof root.trackerService.setNewWindowLayout === "function")
+            root.trackerService.setNewWindowLayout(root.newWindowLayoutIndex);
         if (root.trackerService && typeof root.trackerService.setTrackingEnabled === "function")
             root.trackerService.setTrackingEnabled(root.perWindowLayouts);
         if (!root.perWindowLayoutsActive) {
@@ -278,6 +291,7 @@ Panel {
         resetPulse()
     onPerWindowLayoutsChanged: syncLayoutTracker()
     onTrackerServiceChanged: syncLayoutTracker()
+    onNewWindowLayoutIndexChanged: syncLayoutTracker()
     Component.onCompleted: refresh()
 
     Shortcuts.XkbGroupOption {
@@ -522,16 +536,14 @@ Panel {
             anchors.fill: parent
             focus: true
             active: built || panel.open
-            onLoaded: {
-                built = true;
-                // On the first open the panel may have asked for focus before
-                // the contents existed.
-                if (panel.open)
-                    Qt.callLater(function () {
-                        if (panel.open && panelLoader.item)
-                            panelLoader.item.forceActiveFocus();
-                    });
-            }
+            // Later, as setting `built` during the load makes `active`
+            // re-evaluate itself. On the first open the panel may also have
+            // asked for focus before the contents existed.
+            onLoaded: Qt.callLater(function () {
+                panelLoader.built = true;
+                if (panel.open && panelLoader.item)
+                    panelLoader.item.forceActiveFocus();
+            })
 
             sourceComponent: PanelKeyCatcher {
                 id: keyCatcher
@@ -593,6 +605,7 @@ Panel {
                         showSingleLayout: root.showSingleLayout
                         keycapStyle: root.keycapStyle
                         perWindowLayoutsActive: root.perWindowLayoutsActive
+                        newWindowLayoutIndex: root.newWindowLayoutIndex
                         trackerSupportKnown: root.trackerSupportKnown
                         trackerSupported: root.trackerSupported
                         shortcutLabel: inputSwitchBinding.resolvedLabel || layoutShortcut.label
@@ -618,6 +631,9 @@ Panel {
                         }
                         onPerWindowLayoutsRequested: function (enabled) {
                             root.setPerWindowLayouts(enabled);
+                        }
+                        onNewWindowLayoutRequested: function (key) {
+                            root.setNewWindowLayout(key);
                         }
                         onShortcutEditRequested: root.editKeyboardShortcut()
                         onBackRequested: root.closeSettings()

@@ -43,7 +43,13 @@ void layout_memory_init(struct layout_memory *memory, int default_layout) {
   *memory = (struct layout_memory){
       .active_layout = -1,
       .default_layout = default_layout,
+      .new_window_layout = -1,
   };
+}
+
+void layout_memory_set_new_window_layout(struct layout_memory *memory,
+                                         int layout) {
+  memory->new_window_layout = layout;
 }
 
 void layout_memory_destroy(struct layout_memory *memory) {
@@ -88,7 +94,11 @@ int layout_memory_focus(struct layout_memory *memory, uint64_t window,
     return 0;
 
   struct window_layout *entry = find_window(memory, window);
-  int target = entry == NULL ? memory->active_layout : entry->layout;
+  // a window without a saved layout inherits the active one, unless a layout
+  // for new windows is set
+  int inherited = memory->new_window_layout >= 0 ? memory->new_window_layout
+                                                 : memory->active_layout;
+  int target = entry == NULL ? inherited : entry->layout;
   if (target < 0)
     target = memory->default_layout;
   if (target == memory->active_layout)

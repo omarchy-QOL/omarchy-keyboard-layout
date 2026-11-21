@@ -16,13 +16,14 @@ Column {
     required property bool showSingleLayout
     property bool keycapStyle: false
     required property bool perWindowLayoutsActive
+    required property int newWindowLayoutIndex
     required property bool trackerSupportKnown
     required property bool trackerSupported
     required property string shortcutLabel
     required property var layoutKeys
     required property var layoutLabels
     required property int maxLayoutLabelLength
-    readonly property bool keyboardInputActive: colorDropdown.popupOpen || layoutDropdown.popupOpen || layoutLabelEditor.activeFocus || (customColorEditorVisible && customColorField.activeFocus)
+    readonly property bool keyboardInputActive: colorDropdown.popupOpen || newWindowDropdown.popupOpen || layoutDropdown.popupOpen || layoutLabelEditor.activeFocus || (customColorEditorVisible && customColorField.activeFocus)
     readonly property int compactToggleHeight: Math.round(Style.font.caption * 1.2)
     property bool customColorEditorVisible: false
     property string selectedLayoutKey: ""
@@ -37,6 +38,7 @@ Column {
     signal singleLayoutRequested(bool enabled)
     signal keycapStyleRequested(bool enabled)
     signal perWindowLayoutsRequested(bool enabled)
+    signal newWindowLayoutRequested(string key)
     signal shortcutEditRequested()
     signal layoutLabelEdited(string key, string value)
     signal backRequested()
@@ -122,7 +124,7 @@ Column {
                 foreground: root.foreground
                 onToggled: root.animationRequested(!animationToggle.checked)
 
-                PanelToolTip {
+                Tip {
                     visible: animationToggle.containsMouse
                     text: root.animationEnabled ? "Disable the layout-change animation" : "Enable the layout-change animation"
                     fontFamily: root.fontFamily
@@ -239,7 +241,6 @@ Column {
             PanelActionButton {
                 id: editShortcutButton
                 anchors.centerIn: parent
-                tooltipText: "Edit layouts and keybinding shortcut"
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 fontSize: Style.font.bodySmall
@@ -247,6 +248,15 @@ Column {
                 bordered: true
                 focusable: true
                 onClicked: root.shortcutEditRequested()
+                onHovered: function (isHovered) {
+                    shortcutTip.visible = isHovered;
+                }
+
+                Tip {
+                    id: shortcutTip
+                    text: "Edit layouts and keybinding shortcut"
+                    fontFamily: root.fontFamily
+                }
 
                 Text {
                     id: shortcutGear
@@ -296,9 +306,44 @@ Column {
             foreground: root.foreground
             onToggled: root.singleLayoutRequested(!singleLayoutToggle.checked)
 
-            PanelToolTip {
+            Tip {
                 visible: singleLayoutToggle.containsMouse
                 text: root.showSingleLayout ? "Hide when only one layout is configured" : "Keep visible when only one layout is configured"
+                fontFamily: root.fontFamily
+            }
+        }
+    }
+
+    Item {
+        width: parent.width
+        implicitHeight: Math.max(keycapLabel.implicitHeight, keycapToggle.implicitHeight)
+
+        Text {
+            id: keycapLabel
+            anchors.left: parent.left
+            anchors.right: keycapToggle.left
+            anchors.rightMargin: Style.space(6)
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Keycap style"
+            elide: Text.ElideRight
+            color: root.keycapStyle ? root.foreground : Qt.darker(root.foreground, 2.3)
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+        }
+
+        ToggleSwitch {
+            id: keycapToggle
+            anchors.right: parent.right
+            anchors.verticalCenter: keycapLabel.verticalCenter
+            trackHeight: root.compactToggleHeight
+            cursorPad: Style.space(3)
+            checked: root.keycapStyle
+            foreground: root.foreground
+            onToggled: root.keycapStyleRequested(!keycapToggle.checked)
+
+            Tip {
+                visible: keycapToggle.containsMouse
+                text: root.keycapStyle ? "Show the plain bar label" : "Show the bar label as a keycap"
                 fontFamily: root.fontFamily
             }
         }
@@ -332,7 +377,7 @@ Column {
             foreground: root.foreground
             onToggled: root.perWindowLayoutsRequested(!perWindowToggle.checked)
 
-            PanelToolTip {
+            Tip {
                 visible: perWindowToggle.containsMouse
                 text: root.trackerSupported ? (root.perWindowLayoutsActive ? "Use one layout across all windows" : "Remember the layout used in each window") : "Per-window layouts are unavailable on this system"
                 fontFamily: root.fontFamily
@@ -342,30 +387,40 @@ Column {
 
     Item {
         width: parent.width
-        implicitHeight: Math.max(keycapLabel.implicitHeight, keycapToggle.implicitHeight)
+        implicitHeight: Math.max(newWindowLabel.implicitHeight, newWindowDropdown.implicitHeight)
+        enabled: root.perWindowLayoutsActive
+        opacity: enabled ? 1 : 0.35
 
         Text {
-            id: keycapLabel
+            id: newWindowLabel
             anchors.left: parent.left
-            anchors.right: keycapToggle.left
+            anchors.right: newWindowDropdown.left
             anchors.rightMargin: Style.space(6)
             anchors.verticalCenter: parent.verticalCenter
-            text: "Keycap style"
+            text: "New windows use"
             elide: Text.ElideRight
-            color: root.keycapStyle ? root.foreground : Qt.darker(root.foreground, 2.3)
+            color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
         }
 
-        ToggleSwitch {
-            id: keycapToggle
+        LayoutDropdown {
+            id: newWindowDropdown
             anchors.right: parent.right
-            anchors.verticalCenter: keycapLabel.verticalCenter
-            trackHeight: root.compactToggleHeight
-            cursorPad: Style.space(3)
-            checked: root.keycapStyle
+            width: layoutDropdown.width
+            // the XKB names, as custom labels are only for display
+            options: ["Current"].concat(root.layoutKeys)
+            selectedIndex: root.newWindowLayoutIndex + 1
+            value: newWindowDropdown.options[newWindowDropdown.selectedIndex]
+            tooltip: "The layout a newly opened window starts with.\n"
+                     + "Current keeps the layout you are using.\n"
+                     + "Pick one to always start with that instead.\n"
+                     + "A window remembers its own once you switch."
             foreground: root.foreground
-            onToggled: root.keycapStyleRequested(!keycapToggle.checked)
+            fontFamily: root.fontFamily
+            onIndexSelected: function (index) {
+                root.newWindowLayoutRequested(index > 0 ? root.layoutKeys[index - 1] : "");
+            }
         }
     }
 
@@ -393,7 +448,7 @@ Column {
 
             Text {
                 width: parent.width
-                text: "Leave blank to use the XKB name."
+                text: "Leave blank to use default XKB name."
                 color: Qt.darker(root.foreground, 1.4)
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
