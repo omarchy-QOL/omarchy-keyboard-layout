@@ -19,6 +19,7 @@ Item {
     property real triggerPadding: Style.space(20)
     property Component triggerDecoration: null
     property bool hasCursor: false
+    property string tooltip: ""
     property alias contentItem: popup.contentItem
     readonly property bool popupOpen: popup.opened
     readonly property var popupBorderSpec: Border.localOrSurfaceSpec("popups", "border", popupBorder, Commons.Color.popups.border, Style.normalBorderWidth)
@@ -56,7 +57,16 @@ Item {
         hasCursor: root.hasCursor
         focusable: true
         onClicked: popup.opened ? popup.close() : popup.open()
+        onHovered: function (isHovered) {
+            triggerTip.visible = isHovered && root.tooltip !== "" && !popup.opened;
+        }
         Keys.onDownPressed: root.triggerDownPressed()
+
+        Tip {
+            id: triggerTip
+            text: root.tooltip
+            fontFamily: root.fontFamily
+        }
 
         Loader {
             anchors.right: chevron.left
@@ -92,7 +102,10 @@ Item {
         focus: true
         // Keep trigger presses out of automatic outside-click dismissal.
         closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutsideParent
-        onOpened: root.popupOpened()
+        onOpened: {
+            triggerTip.visible = false;
+            root.popupOpened();
+        }
 
         background: BorderSurface {
             color: root.background

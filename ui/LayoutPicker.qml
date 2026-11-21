@@ -68,6 +68,7 @@ Column {
         options: root.layouts
         selectedIndex: root.selectedIndex
         value: root.layouts[root.selectedIndex] || ""
+        tooltip: "Select current keyboard layout"
         foreground: root.foreground
         fontFamily: root.fontFamily
         enabled: root.layouts.length > 0
@@ -84,6 +85,7 @@ Column {
             model: ["  Emoji", "  View"]
 
             Button {
+                id: actionButton
                 required property string modelData
                 required property int index
                 width: (root.width - Style.space(6)) / 2
@@ -97,6 +99,13 @@ Column {
                 onClicked: index === 0 ? root.emojiRequested() : root.viewerRequested()
                 onHovered: function (hovered) {
                     root.hoverItem(1 + index, hovered);
+                    actionTip.visible = hovered;
+                }
+
+                Tip {
+                    id: actionTip
+                    text: actionButton.index === 0 ? "Emoji picker" : "Show on-screen keyboard"
+                    fontFamily: root.fontFamily
                 }
             }
         }
