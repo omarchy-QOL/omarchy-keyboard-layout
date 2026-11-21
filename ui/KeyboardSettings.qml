@@ -16,6 +16,7 @@ Column {
     required property bool showSingleLayout
     property bool keycapStyle: false
     required property bool perWindowLayoutsActive
+    required property bool newWindowDefault
     required property bool trackerSupportKnown
     required property bool trackerSupported
     required property string shortcutLabel
@@ -37,6 +38,7 @@ Column {
     signal singleLayoutRequested(bool enabled)
     signal keycapStyleRequested(bool enabled)
     signal perWindowLayoutsRequested(bool enabled)
+    signal newWindowDefaultRequested(bool enabled)
     signal shortcutEditRequested()
     signal layoutLabelEdited(string key, string value)
     signal backRequested()
@@ -335,6 +337,42 @@ Column {
             PanelToolTip {
                 visible: perWindowToggle.containsMouse
                 text: root.trackerSupported ? (root.perWindowLayoutsActive ? "Use one layout across all windows" : "Remember the layout used in each window") : "Per-window layouts are unavailable on this system"
+                fontFamily: root.fontFamily
+            }
+        }
+    }
+
+    Item {
+        width: parent.width
+        visible: root.perWindowLayoutsActive
+        implicitHeight: visible ? Math.max(newWindowLabel.implicitHeight, newWindowToggle.implicitHeight) : 0
+
+        Text {
+            id: newWindowLabel
+            anchors.left: parent.left
+            anchors.right: newWindowToggle.left
+            anchors.rightMargin: Style.space(6)
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Default for new windows"
+            elide: Text.ElideRight
+            color: root.newWindowDefault ? root.foreground : Qt.darker(root.foreground, 2.3)
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+        }
+
+        ToggleSwitch {
+            id: newWindowToggle
+            anchors.right: parent.right
+            anchors.verticalCenter: newWindowLabel.verticalCenter
+            trackHeight: root.compactToggleHeight
+            cursorPad: Style.space(3)
+            checked: root.newWindowDefault
+            foreground: root.foreground
+            onToggled: root.newWindowDefaultRequested(!newWindowToggle.checked)
+
+            PanelToolTip {
+                visible: newWindowToggle.containsMouse
+                text: root.newWindowDefault ? "New windows start on the layout that is in use now" : "New windows start on the first configured layout"
                 fontFamily: root.fontFamily
             }
         }

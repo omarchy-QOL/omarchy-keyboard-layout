@@ -2,6 +2,12 @@
 
 Notable changes to Keyboard Layout Pulse are documented here.
 
+## Unreleased
+
+- Add a **Default for new windows** setting for per-window layouts,
+  so a window without a remembered layout opens on the first configured layout
+  instead of the layout that is currently active.
+
 ## 0.2.8 - 2026-11-18
 
 - Build the layout panel and the keyboard viewer the first time they are

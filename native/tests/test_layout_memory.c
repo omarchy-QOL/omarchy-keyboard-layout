@@ -70,6 +70,31 @@ static void test_more_than_64_windows(void) {
   layout_memory_destroy(&memory);
 }
 
+static void test_new_window_default_follows_option(void) {
+  struct layout_memory memory;
+  layout_memory_init(&memory, 0);
+
+  int target = -1;
+  // By default an unseen window inherits the active layout.
+  assert(layout_memory_reset(&memory, 0xa, 1) == 0);
+  assert(layout_memory_focus(&memory, 0xb, &target) == 0);
+  assert(layout_memory_observe(&memory, 2) == 0);
+
+  // With the option enabled an unseen window starts on the default layout.
+  layout_memory_set_new_window_default(&memory, true);
+  assert(layout_memory_reset(&memory, 0xc, 1) == 0);
+  assert(layout_memory_focus(&memory, 0xd, &target) == 1);
+  assert(target == 0);
+  assert(layout_memory_observe(&memory, target) == 0);
+
+  // A saved layout still wins over the default.
+  assert(layout_memory_focus(&memory, 0xc, &target) == 1);
+  assert(target == 1);
+  assert(layout_memory_observe(&memory, target) == 0);
+
+  layout_memory_destroy(&memory);
+}
+
 static void test_window_address_parser(void) {
   uint64_t window = 99;
   assert(layout_memory_parse_window("", &window) == 0 && window == 0);
@@ -88,5 +113,6 @@ int main(void) {
   test_unfocused_layout_is_not_attributed();
   test_close_and_reset_forget_saved_layouts();
   test_more_than_64_windows();
+  test_new_window_default_follows_option();
   test_window_address_parser();
 }
