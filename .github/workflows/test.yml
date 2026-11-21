@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Omarchy is Arch, so build and test against the libraries its users have
+    container: archlinux:base-devel
+    steps:
+      # libx11 carries the Compose tables the keymap tests resolve
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm --needed json-c libxkbcommon libutf8proc libx11 nodejs
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Native tests
+        run: make -C native all test
+
+      # the QML tests need Quickshell and an installed Omarchy, so they stay local
+      - name: JavaScript tests
+        run: node --test tests/layout-state.test.mjs tests/keyboard-viewer.test.mjs
