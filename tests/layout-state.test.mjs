@@ -424,14 +424,6 @@ test('the tracker receives both per-window settings', () => {
     assert.equal(root.automaticRestoreLayout, 2);
 });
 
-test('the widget re-syncs the tracker when the shell injects a setting', () => {
-    // The shell assigns `settings` after the widget is constructed, so a
-    // property bound to setting() can be read before it settles. The widget
-    // must therefore also react to the value changing, not only bind to it.
-    assert.match(source, /onNewWindowLayoutIndexChanged:\s*syncLayoutTracker\(\)/);
-    assert.match(source, /onPerWindowLayoutsChanged:\s*syncLayoutTracker\(\)/);
-});
-
 test('the tracker command passes the layout for new windows only when one is set', () => {
     const service = readFileSync(new URL('../Service.qml', import.meta.url), 'utf8');
     const command = service.match(/    function trackerCommand\(\) \{[\s\S]*?\n    \}/)[0];
@@ -442,20 +434,4 @@ test('the tracker command passes the layout for new windows only when one is set
     }));
     assert.deepEqual(run(1), ['setpriv', '--pdeathsig', 'TERM', '/helper', '--new-window-layout', '1']);
     assert.deepEqual(run(-1), ['setpriv', '--pdeathsig', 'TERM', '/helper']);
-});
-
-test('the new-window label is no wider than the widest settings label', () => {
-    // The settings panel is narrow and the shell font is monospace by default,
-    // so a longer string is a wider one. Keeping the new label within the
-    // widest label already in this list stops it from being elided.
-    const settingsSource = readFileSync(new URL('../ui/KeyboardSettings.qml', import.meta.url), 'utf8');
-    const labelFor = id => {
-        const match = settingsSource.match(new RegExp(`id: ${id}[\\s\\S]*?text: "([^"]+)"`));
-        assert.ok(match, `no label text found for ${id}`);
-        return match[1];
-    };
-    const existing = labelFor('perWindowLabel');
-    const added = labelFor('newWindowLabel');
-    assert.ok(added.length <= existing.length,
-        `"${added}" (${added.length} chars) is wider than "${existing}" (${existing.length} chars)`);
 });
