@@ -536,16 +536,14 @@ Panel {
             anchors.fill: parent
             focus: true
             active: built || panel.open
-            onLoaded: {
-                built = true;
-                // On the first open the panel may have asked for focus before
-                // the contents existed.
-                if (panel.open)
-                    Qt.callLater(function () {
-                        if (panel.open && panelLoader.item)
-                            panelLoader.item.forceActiveFocus();
-                    });
-            }
+            // Later, as setting `built` during the load makes `active`
+            // re-evaluate itself. On the first open the panel may also have
+            // asked for focus before the contents existed.
+            onLoaded: Qt.callLater(function () {
+                panelLoader.built = true;
+                if (panel.open && panelLoader.item)
+                    panelLoader.item.forceActiveFocus();
+            })
 
             sourceComponent: PanelKeyCatcher {
                 id: keyCatcher

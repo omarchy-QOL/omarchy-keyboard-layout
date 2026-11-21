@@ -9,6 +9,7 @@ Notable changes to Keyboard Layout Pulse are documented here.
   is currently active, contributed by
   [pageantry](https://github.com/pageantry) in
   [#27](https://github.com/omarchy-QOL/omarchy-keyboard-layout/pull/27).
+- Stop a binding loop warning when the panel is first opened.
 
 ## 0.2.8 - 2026-11-18
 
